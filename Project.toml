@@ -1,7 +1,6 @@
 name = "MacroEnergy"
 uuid = "260b7737-bf0e-4e84-9335-3af14438b1f5"
-authors = ["Jesse Jenkins", "Dharik Mallapragada", "Ruaridh Macdonald", "Filippo Pecci", "Amarasinghage T.D. Perera", "Sambuddha Chakrabarti", "Luca Bonaldo"]
-version = "0.0.0"
+version = "0.0.1"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -39,6 +38,7 @@ CSV = "0.10"
 ClusterManagers = "2"
 DBInterface = "2"
 DataFrames = "1.7"
+Dates = "1"
 Distributed = "1"
 DistributedArrays = "0.6"
 DuckDB = "0.10"
