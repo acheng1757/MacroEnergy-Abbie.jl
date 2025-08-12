@@ -9,7 +9,7 @@ function run_case(
     log_file_attribution::Bool=true,
     # Monolithic or Myopic
     optimizer::DataType=HiGHS.Optimizer,
-    optimizer_env::Any=missing,
+    optimizer_env::Any=nothing,
     optimizer_attributes::Tuple=("BarConvTol" => 1e-3, "Crossover" => 0, "Method" => 2),
     # Benders
     planning_optimizer::DataType=HiGHS.Optimizer,
