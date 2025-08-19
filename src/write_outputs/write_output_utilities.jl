@@ -942,7 +942,7 @@ function write_outputs(case_path::AbstractString, case::Case, myopic_results::My
         mkpath(results_dir)
         write_outputs(results_dir, period, myopic_results.models[period_idx])
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
@@ -987,7 +987,7 @@ function write_outputs(case_path::AbstractString, case::Case, bd_results::Bender
         write_costs(joinpath(results_dir, "costs.csv"), period, costs)
         write_undiscounted_costs(joinpath(results_dir, "undiscounted_costs.csv"), period, costs)
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
