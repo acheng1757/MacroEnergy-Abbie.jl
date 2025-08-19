@@ -118,10 +118,6 @@ function has_opt_env(optimizer::Symbol)
     return haskey(OPT_ENV_REGISTRY, optimizer) && !isnothing(opt_env(optimizer))
 end
 
-# function __init__()
-#     isdir(ME_DEPOT_PATH) && load_subcommodities_from_file(ME_DEPOT_PATH)
-# end
-
 function include_all_in_folder(folder::AbstractString, root_path::AbstractString=@__DIR__)
     base_path = joinpath(root_path, folder)
     for (root, dirs, files) in Base.Filesystem.walkdir(base_path)
