@@ -3,9 +3,10 @@ function run_case(
     lazy_load::Bool=true,
     # Logging
     log_level::LogLevel=Logging.Info,
-    log_to_console::Bool=true,
+    log_to_console::Bool=false,
     log_to_file::Bool=true,
     log_file_path::AbstractString=joinpath(case_path, "$(basename(case_path)).log"),
+    log_file_attribution::Bool=false,
     # Monolithic or Myopic
     optimizer::DataType=HiGHS.Optimizer,
     optimizer_env::Any=missing,
@@ -16,7 +17,7 @@ function run_case(
     planning_optimizer_attributes::Tuple=("BarConvTol" => 1e-3, "Crossover" => 0, "Method" => 2),
     subproblem_optimizer_attributes::Tuple=("BarConvTol" => 1e-3, "Crossover" => 0, "Method" => 2)
 )
-    set_logger(log_to_console, log_to_file, log_level, log_file_path)
+    set_logger(log_to_console, log_to_file, log_level, log_file_path, log_file_attribution)
 
     @info("Running case at $(case_path)")
 
