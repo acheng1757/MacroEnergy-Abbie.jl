@@ -34,7 +34,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [weakdeps]
-Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b" 
+Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b"
 
 [extensions]
 MacroEnergyGurobiExt = "Gurobi"
