@@ -3,10 +3,10 @@ function run_case(
     lazy_load::Bool=true,
     # Logging
     log_level::LogLevel=Logging.Info,
-    log_to_console::Bool=false,
+    log_to_console::Bool=true,
     log_to_file::Bool=true,
     log_file_path::AbstractString=joinpath(case_path, "$(basename(case_path)).log"),
-    log_file_attribution::Bool=false,
+    log_file_attribution::Bool=true,
     # Monolithic or Myopic
     optimizer::DataType=HiGHS.Optimizer,
     optimizer_env::Any=missing,
