@@ -915,7 +915,7 @@ function write_outputs(case_path::AbstractString, case::Case, model::Model)
         mkpath(results_dir)
         write_outputs(results_dir, period, model)
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
@@ -1284,4 +1284,12 @@ function evaluate_vtheta_in_expression(m::Model, expr::Symbol, subop_sol::Dict, 
     # Evaluate the expression `expr` using the mapping
     return value(x -> theta_to_cost[x], m[expr])
     
+end
+
+function write_settings(case::Case, filepath::AbstractString)
+    settings = Dict{Symbol, Any}(
+        :case_settings => case.settings,
+        :system_settings => [system.settings for system in case.systems]
+    )
+    write_json(filepath, settings)
 end
