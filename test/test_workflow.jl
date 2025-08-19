@@ -1,7 +1,9 @@
 module TestWorkflow
 
 using Test
-using Gurobi, HiGHS
+using HiGHS
+using Pkg
+try Pkg.add("Gurobi"); using Gurobi; catch e end
 using CSV, DataFrames, JSON3
 import MacroEnergy:
     System,
