@@ -70,9 +70,9 @@ function start_distributed_processes!(number_of_processes::Int64,case_path::Abst
     @sync for p in workers()
         @async create_worker_process(p,project,case_path) # add a check
     end
-    
-    @info("Number of procs: ", nprocs())
-    @info("Number of workers: ", nworkers())
+
+    @info("Number of procs: $(nprocs())")
+    @info("Number of workers: $(nworkers())")
 end
 
 function solver_available(solver_name::Symbol)::Bool

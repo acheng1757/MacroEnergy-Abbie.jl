@@ -24,11 +24,11 @@ function attributed_logger(log_file_path, log_level::LogLevel=Logging.Info)
             module_str = string(args._module)
             file_info = args.file !== nothing ? "$(basename(string(args.file))):$(args.line)" : ""
             
-            # Format: timestamp | LEVEL | Module | file:line | message
+            # Format: timestamp | LEVEL | Worker | Module | file:line | message
             if !isempty(file_info)
-                println(io, "$(timestamp()) | $level_str | $module_str | $file_info | $(args.message)")
+                println(io, "$(timestamp()) | $level_str | $(myid()) | $module_str | $file_info | $(args.message)")
             else
-                println(io, "$(timestamp()) | $level_str | $module_str | $(args.message)")
+                println(io, "$(timestamp()) | $level_str | $(myid()) | $module_str | $(args.message)")
             end
         end,
         log_level
