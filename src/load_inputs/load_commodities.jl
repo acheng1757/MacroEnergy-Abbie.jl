@@ -14,20 +14,20 @@ end
 
 ###### ###### ###### ######
 
-function make_commodity(new_commodity::Union{String,Symbol})::String
-    s = "abstract type $new_commodity <: Commodity end"
+function make_commodity(new_commodity::Union{String,Symbol}, m::Module = MacroEnergy)::String
+    s = "abstract type $new_commodity <: $m.Commodity end"
     eval(Meta.parse(s))
     return s
 end
 
-function make_commodity(new_commodity::Union{String,Symbol}, parent_type::Union{String,Symbol})::String
-    s = "abstract type $new_commodity <: $parent_type end"
+function make_commodity(new_commodity::Union{String,Symbol}, parent_type::Union{String,Symbol}, m::Module = MacroEnergy)::String
+    s = "abstract type $new_commodity <: $m.$parent_type end"
     eval(Meta.parse(s))
     return s
 end
 
-function make_commodity(new_commodity::Union{String,Symbol}, parent_type::DataType)::String
-    return make_commodity(new_commodity, typesymbol(parent_type))
+function make_commodity(new_commodity::Union{String,Symbol}, parent_type::DataType, m::Module = MacroEnergy)::String
+    return make_commodity(new_commodity, typesymbol(parent_type), m)
 end
 
 ###### ###### ###### ######
@@ -67,7 +67,7 @@ function load_commodities(data::AbstractVector{<:AbstractString}, rel_path::Abst
 end
 
 function load_commodities(commodities::AbstractVector{<:Any}, rel_path::AbstractString=""; write_subcommodities::Bool=false)
-    subcommodities_path = load_subcommodities_from_file()
+    # subcommodities_path = load_subcommodities_from_file()
     register_commodity_types!()
 
     macro_commodities = commodity_types()
@@ -121,13 +121,8 @@ function load_commodities(commodities::AbstractVector{<:Any}, rel_path::Abstract
     @debug(" -- Done adding subcommodities")
 
     if write_subcommodities && !isempty(subcommodities_lines)
-        @debug("Writing subcommodities to file $(subcommodities_path)")
-        mkpath(dirname(subcommodities_path))
-        io = open(subcommodities_path, "w")
-            for line in subcommodities_lines
-                println(io, line)
-            end
-        close(io)
+        @debug("Writing subcommodities to file $(user_subcommodities_path(subcommodities_path))")
+        write_user_subcommodities(rel_path, subcommodities_lines)
         @debug(" -- Done writing subcommodities")
     end
     # get the list of all commodities available
@@ -162,8 +157,8 @@ function validate_commodities(
     return nothing
 end
 
-function load_subcommodities_from_file(path::AbstractString=ME_DEPOT_PATH)
-    subcommodities_path = joinpath(path, "subcommodities.jl")
+function load_subcommodities_from_file(path::AbstractString=pwd())
+    subcommodities_path = joinpath(path, "tmp","subcommodities.jl")
     if isfile(subcommodities_path)
         @info(" ++ Loading pre-defined user commodities")
         @debug(" -- Loading subcommodities from file $(subcommodities_path)")

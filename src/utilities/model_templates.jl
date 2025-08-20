@@ -76,7 +76,7 @@ function template_run_file(filepath::AbstractString)
             io,
             """
             using MacroEnergy
-            # using Gurobi
+            # using HiGHS
 
             (case, model) = run_case(@__DIR__);
             # (case, model) = run_case(@__DIR__; optimizer=Gurobi.Optimizer);
