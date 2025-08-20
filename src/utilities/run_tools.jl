@@ -55,5 +55,5 @@ function run_case(
         end
     end
 
-    return case.systems, solution
+    return case, solution
 end

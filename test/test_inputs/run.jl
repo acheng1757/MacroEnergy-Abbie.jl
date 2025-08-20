@@ -1,8 +1,6 @@
 using MacroEnergy
 using Gurobi
 
-#(system, model) = run_case(@__DIR__; optimizer=Gurobi.Optimizer);
-
 println()
 
 system = MacroEnergy.load_system(@__DIR__)

@@ -915,7 +915,7 @@ function write_outputs(case_path::AbstractString, case::Case, model::Model)
         mkpath(results_dir)
         write_outputs(results_dir, period, model)
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
@@ -942,7 +942,7 @@ function write_outputs(case_path::AbstractString, case::Case, myopic_results::My
         mkpath(results_dir)
         write_outputs(results_dir, period, myopic_results.models[period_idx])
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
@@ -987,7 +987,7 @@ function write_outputs(case_path::AbstractString, case::Case, bd_results::Bender
         write_costs(joinpath(results_dir, "costs.csv"), period, costs)
         write_undiscounted_costs(joinpath(results_dir, "undiscounted_costs.csv"), period, costs)
     end
-
+    write_settings(case, joinpath(case_path, "settings.json"))
     return nothing
 end
 
@@ -1284,4 +1284,12 @@ function evaluate_vtheta_in_expression(m::Model, expr::Symbol, subop_sol::Dict, 
     # Evaluate the expression `expr` using the mapping
     return value(x -> theta_to_cost[x], m[expr])
     
+end
+
+function write_settings(case::Case, filepath::AbstractString)
+    settings = Dict{Symbol, Any}(
+        :case_settings => case.settings,
+        :system_settings => [system.settings for system in case.systems]
+    )
+    write_json(filepath, settings)
 end
