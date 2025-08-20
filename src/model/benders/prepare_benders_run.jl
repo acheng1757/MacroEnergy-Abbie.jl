@@ -76,6 +76,9 @@ function start_distributed_processes!(number_of_processes::Int64,case_path::Abst
     @info("Number of workers: ", nworkers())
 end
 
+function solver_available(solver_name::Symbol)::Bool
+    return isdefined(Main, solver_name)
+end
 
 function create_worker_process(pid,project,case_path::AbstractString)
 
@@ -85,8 +88,18 @@ function create_worker_process(pid,project,case_path::AbstractString)
 
     Distributed.remotecall_eval(Main, pid, :(using MacroEnergy))
 
-    Distributed.remotecall_eval(Main, pid, :(load_subcommodities_from_file($(case_path))))
-    
+    optional_solvers = [:Gurobi,]
+    for solver in optional_solvers
+        if solver_available(solver)
+            @info("Loading $solver on worker $pid")
+            Distributed.remotecall_eval(Main, pid, :(using $solver))
+            @debug("Loaded $solver on worker $pid")
+        end
+    end
+
     Distributed.remotecall_eval(Main, pid, :(using MacroEnergySolvers))
+
+    additions_path = user_additions_module_path(case_path)
+    Distributed.remotecall_eval(MacroEnergy, pid, :(MacroEnergy.load_user_additions($additions_path)))
 
 end
