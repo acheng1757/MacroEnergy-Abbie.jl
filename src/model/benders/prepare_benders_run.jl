@@ -71,7 +71,6 @@ function start_distributed_processes!(number_of_processes::Int64,case_path::Abst
         @async create_worker_process(p,project,case_path) # add a check
     end
     
-
     @info("Number of procs: ", nprocs())
     @info("Number of workers: ", nworkers())
 end
@@ -91,7 +90,6 @@ function create_worker_process(pid,project,case_path::AbstractString)
     optional_solvers = [:Gurobi,]
     for solver in optional_solvers
         if solver_available(solver)
-            @info("Loading $solver on worker $pid")
             Distributed.remotecall_eval(Main, pid, :(using $solver))
             @debug("Loaded $solver on worker $pid")
         end
