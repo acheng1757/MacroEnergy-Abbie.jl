@@ -1,0 +1,207 @@
+
+macro commodity_colours()
+    return quote
+        Dict(
+            :Commodity => "#f7022a",   # CherryRed
+            :Electricity => "#FFD700", # Gold
+            :Alumina => "#E5E5E5",     # LightGray
+            :Aluminum => "#A9A9A9",    # DarkGray
+            :AluminumScrap => "#A9A9A9", # DarkGray
+            :Bauxite => "#8B4513",     # SaddleBrown
+            :Biomass => "#6fc276",     # SoftGreen
+            :CapturedCO2 => "#A9A9A9", # DarkGray
+            :CO2 => "#A9A9A9",         # DarkGray
+            :Cement => "#ffb16d",      # Apricot
+            :Coal => "#2F4F4F",        # DarkSlateGray
+            :Graphite => "#d5869d",    # DullPink
+            :Hydrogen => "#FF69B4",    # HotPink
+            :LiquidFuels => "#ff9408", # Tangerine
+            :NaturalGas => "#c6fcff",  # LightSkyBlue
+            :Uranium => "#4B0082",     # Indigo
+        )
+    end
+end
+
+function mermaid_header()
+    return "```mermaid \n %%{init: {'theme': 'base', 'themeVariables': { 'background': '#D1EBDE' }}}%%"
+end
+
+function mermaid_transform_style(name::String)
+    return "style $name fill:black,stroke:black,color:black;"
+end
+
+function mermaid_node_style(name::String, fill::String, font_size::Int=21)
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black;"
+end
+
+function mermaid_external_node_style(name::String, fill::String, font_size::Int=21)
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black,stroke-dasharray: 3,5;"
+end
+
+function mermaid_storage_style(name::String, fill::String)
+    return "style $name fill:$fill,stroke:black,color:black;"
+end
+
+function mermaid_edge_style(name::String, number::Int, stroke::String)
+    return "linkStyle $number stroke:$stroke,stroke-width: 2px; $name@{ animate: true };"
+end
+
+function next_letter(letter::String)
+    # This is not very robust, and only works for A -> Z or a -> z
+    return string(letter[1] + 1)
+end
+
+function find_commodities(data::AbstractDict)
+    return find_key(data, :commodity)
+end
+
+function find_key(data::AbstractDict, target_key)
+    commodities = Set{Any}()
+    for (key, value) in data
+        if key == target_key
+            if !ismissing(value) 
+                push!(commodities, value)
+            end
+        elseif isa(value, AbstractDict)
+            union!(commodities, find_key(value, target_key))
+        end
+    end
+    return commodities
+end
+
+function replace_key(data::AbstractDict, target_key, new_value)
+    for (key, value) in data
+        if key == target_key
+            data[key] = new_value
+        elseif isa(value, AbstractDict)
+            replace_key(value, target_key, new_value)
+        end
+    end
+    return nothing
+end
+
+function find_diagram_name(components::AbstractDict, component_id::Symbol)
+    for (field_name, details) in components
+        if haskey(details, :id) && details[:id] == component_id
+            return details[:diagram_name]
+        end
+    end
+end
+
+function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::Type{<:AbstractAsset}, vertex_name::String)
+    COMMODITY_COLOURS = @commodity_colours()
+    components = Dict{Symbol, Dict{Symbol, Any}}()
+    if isa(asset_type, UnionAll)
+        asset_type = asset_type{Commodity}
+    end
+    for (name, component) in struct_info(asset_type)
+        if component == AbstractAsset
+            @info "We can't currently visualize nested assets."
+            continue
+        elseif component == AbstractStorage
+            commodity = commodity_type(component)
+            components[name] = Dict{Symbol, Any}(
+                :diagram_name => vertex_name
+            )
+            diagram *= "$(vertex_name)[$commodity] \n "
+            styling *= "$(mermaid_storage_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
+        elseif component == Node
+            commodity = commodity_type(component)
+            components[name] = Dict{Symbol, Any}(
+                :diagram_name => vertex_name
+            )
+            diagram *= "$(vertex_name)(($commodity)) \n "
+            styling *= "$(mermaid_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
+        elseif component == Transformation
+            components[name] = Dict{Symbol, Any}(
+                :diagram_name => vertex_name
+            )
+            diagram *= "$(vertex_name){{..}} \n "
+            styling *= "$(mermaid_transform_style(vertex_name)) \n "
+        end
+        vertex_name = next_letter(vertex_name)
+    end
+    return (diagram, styling, components, vertex_name)
+end
+
+function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String="TB")
+    if isa(asset_type, UnionAll)
+        UNIONALL_TYPE = true
+    else
+        UNIONALL_TYPE = false
+    end
+    vertex_name = "A"
+    edge_name = "a"
+    edge_numbers = Dict{String, Int}()
+    styling = ""
+    diagram = "$(mermaid_header())
+        flowchart LR
+          subgraph $asset_type
+          direction $orientation
+    "
+    (diagram, styling, components, vertex_name) = mermaid_parse_vertices!(diagram, styling, asset_type, vertex_name)
+    data = (!UNIONALL_TYPE && !isempty(asset_type.parameters)) ? default_data(asset_type.name.wrapper, "tmp", "full") : default_data(asset_type, "tmp", "full")
+    commodities = find_commodities(data)
+    s = empty_system("")
+    s.settings = (AutoCreateNodes = true, AutoCreateLocations = true)
+    for commodity in commodities
+        c_sym = Symbol(commodity)
+        c = commodity_types()[c_sym]
+        s.time_data[c_sym] = TimeData{c}(; time_interval = 1:1)
+    end
+    if UNIONALL_TYPE
+        push!(commodities, "Commodity")
+        s.time_data[:Commodity] = TimeData{Commodity}(; time_interval = 1:1)
+        replace_key(data, :commodity, "Commodity")
+    end
+    if UNIONALL_TYPE || !isempty(asset_type.parameters)
+        c = UNIONALL_TYPE ? Commodity : asset_type.parameters[1]
+        COMMODITY_TYPES[:Commodity] = Commodity
+        s.time_data[Symbol(c)] = TimeData{c}(; time_interval = 1:1)
+        replace_key(data, :commodity, string(c))
+    end
+    tmp = (!UNIONALL_TYPE && !isempty(asset_type.parameters)) ? make(asset_type.name.wrapper, data, s) : make(asset_type, data, s)
+    for (field_name, details) in components
+        details[:id] = getfield(tmp, field_name).id
+    end
+    COMMODITY_COLOURS = @commodity_colours()
+    for node in s.locations
+        commodity = commodity_type(node)
+        components[node.id] = Dict{Symbol, Any}(
+            :id => node.id,
+            :diagram_name => vertex_name
+        )
+        diagram *= "$(vertex_name)(($commodity)) \n "
+        styling *= "$(mermaid_external_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
+        vertex_name = next_letter(vertex_name)
+    end
+    for component in get_components(tmp)
+        if isa(component, AbstractEdge)
+            commodity = commodity_type(component)
+            edge_numbers[edge_name] = length(edge_numbers)
+            diagram *= "$(find_diagram_name(components, component.start_vertex.id)) $edge_name@--> $(find_diagram_name(components, component.end_vertex.id)) \n "
+            styling *= "$(mermaid_edge_style("$edge_name", edge_numbers[edge_name], COMMODITY_COLOURS[Symbol(commodity)])) \n "
+            edge_name = next_letter(edge_name)
+        end
+    end
+
+    diagram *= "end \n "
+    diagram *= styling
+    diagram *= "\n```"
+
+    # save diagram as tmp.md
+    open("tmp.md", "w") do f
+        write(f, diagram)
+    end
+
+
+    # for edge in data[:edges]
+    #     from = components[edge.from]
+    #     to = components[edge.to]
+    #     commodity = edge.commodity
+    #     diagram *= "$from -->|$commodity| $to \n "
+    #     styling *= "$(mermaid_edge_style(edge_name, edge_name, COMMODITY_COLOURS[commodity]));"
+    #     edge_name = next_letter(edge_name)
+    # end
+    return diagram, tmp, s, components
+end
