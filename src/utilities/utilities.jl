@@ -219,33 +219,15 @@ end
 macro start_vertex(name, data, commodity, get_from_tuples)
     return esc(quote
         local vertex = get_from($get_from_tuples, missing, false)
-        if ismissing(vertex) && system.settings.AutoCreateNodes
-            @debug "Creating start vertex for $name"
-            $name = Node{$commodity}(;
-                id = Symbol(rand(Int16)),
-                timedata = system.time_data[Symbol($commodity)]
-            )
-            push!(system.locations, $name)
-        else
-            $data[:start_vertex] = vertex
-            $name = find_node(system.locations, Symbol(vertex), $commodity)
-        end
+        $data[:start_vertex] = vertex
+        $name = find_node(system, Symbol(vertex), $commodity)
     end)
 end
 
 macro end_vertex(name, data, commodity, get_from_tuples)
     return esc(quote
         local vertex = get_from($get_from_tuples, missing, false)
-        if ismissing(vertex) && system.settings.AutoCreateNodes
-            @debug "Creating end vertex for $name"
-            $name = Node{$commodity}(;
-                id = Symbol(rand(Int16)),
-                timedata = system.time_data[Symbol($commodity)]
-            )
-            push!(system.locations, $name)
-        else
-            $data[:end_vertex] = vertex
-            $name = find_node(system.locations, Symbol(vertex), $commodity)
-        end
+        $data[:end_vertex] = vertex
+        $name = find_node(system, Symbol(vertex), $commodity)
     end)
 end

@@ -2,14 +2,14 @@
 macro commodity_colours()
     return quote
         Dict(
-            :Commodity => "#f7022a",   # CherryRed
+            :Commodity => "#d3b683",   # VeryLightBrown
             :Electricity => "#FFD700", # Gold
             :Alumina => "#E5E5E5",     # LightGray
             :Aluminum => "#A9A9A9",    # DarkGray
             :AluminumScrap => "#A9A9A9", # DarkGray
             :Bauxite => "#8B4513",     # SaddleBrown
             :Biomass => "#6fc276",     # SoftGreen
-            :CapturedCO2 => "#A9A9A9", # DarkGray
+            :CO2Captured => "#A9A9A9", # DarkGray
             :CO2 => "#A9A9A9",         # DarkGray
             :Cement => "#ffb16d",      # Apricot
             :Coal => "#2F4F4F",        # DarkSlateGray
@@ -38,8 +38,8 @@ function mermaid_external_node_style(name::String, fill::String, font_size::Int=
     return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black,stroke-dasharray: 3,5;"
 end
 
-function mermaid_storage_style(name::String, fill::String)
-    return "style $name fill:$fill,stroke:black,color:black;"
+function mermaid_storage_style(name::String, fill::String, font_size::Int=21)
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black;"
 end
 
 function mermaid_edge_style(name::String, number::Int, stroke::String)
@@ -49,6 +49,10 @@ end
 function next_letter(letter::String)
     # This is not very robust, and only works for A -> Z or a -> z
     return string(letter[1] + 1)
+end
+
+function calc_font_size(commodity_name::String, default_size::Int=21, trigger_length::Int=10, smallest_size::Int=11)
+    return max(smallest_size, min(default_size, default_size - 3 * (length(commodity_name) - trigger_length)))
 end
 
 function find_commodities(data::AbstractDict)
@@ -98,21 +102,25 @@ function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::T
         if component == AbstractAsset
             @info "We can't currently visualize nested assets."
             continue
-        elseif component == AbstractStorage
+        elseif component <: AbstractStorage
             commodity = commodity_type(component)
             components[name] = Dict{Symbol, Any}(
                 :diagram_name => vertex_name
             )
-            diagram *= "$(vertex_name)[$commodity] \n "
-            styling *= "$(mermaid_storage_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
-        elseif component == Node
+            commodity_name = string(commodity)
+            diagram *= "$(vertex_name)[$commodity_name] \n "
+            font_size = calc_font_size(commodity_name)
+            styling *= "$(mermaid_storage_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
+        elseif component <: Node
             commodity = commodity_type(component)
             components[name] = Dict{Symbol, Any}(
                 :diagram_name => vertex_name
             )
-            diagram *= "$(vertex_name)(($commodity)) \n "
-            styling *= "$(mermaid_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
-        elseif component == Transformation
+            commodity_name = string(commodity)
+            diagram *= "$(vertex_name)(($commodity_name)) \n "
+            font_size = calc_font_size(commodity_name)
+            styling *= "$(mermaid_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
+        elseif component <: Transformation
             components[name] = Dict{Symbol, Any}(
                 :diagram_name => vertex_name
             )
@@ -134,9 +142,10 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
     edge_name = "a"
     edge_numbers = Dict{String, Int}()
     styling = ""
+    asset_name = (!UNIONALL_TYPE && !isempty(asset_type.parameters)) ? asset_type.name.wrapper : asset_type
     diagram = "$(mermaid_header())
         flowchart LR
-          subgraph $asset_type
+          subgraph $asset_name
           direction $orientation
     "
     (diagram, styling, components, vertex_name) = mermaid_parse_vertices!(diagram, styling, asset_type, vertex_name)
@@ -171,8 +180,10 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
             :id => node.id,
             :diagram_name => vertex_name
         )
-        diagram *= "$(vertex_name)(($commodity)) \n "
-        styling *= "$(mermaid_external_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)])) \n "
+        commodity_name = string(commodity)
+        diagram *= "$(vertex_name)(($commodity_name)) \n "
+        font_size = calc_font_size(commodity_name)
+        styling *= "$(mermaid_external_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
         vertex_name = next_letter(vertex_name)
     end
     for component in get_components(tmp)
@@ -189,19 +200,16 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
     diagram *= styling
     diagram *= "\n```"
 
-    # save diagram as tmp.md
-    open("tmp.md", "w") do f
-        write(f, diagram)
+    return diagram
+end
+
+function save_mermaid_diagram(md_string::String, filepath::AbstractString)
+    open(filepath, "w") do f
+        write(f, md_string)
     end
+end
 
-
-    # for edge in data[:edges]
-    #     from = components[edge.from]
-    #     to = components[edge.to]
-    #     commodity = edge.commodity
-    #     diagram *= "$from -->|$commodity| $to \n "
-    #     styling *= "$(mermaid_edge_style(edge_name, edge_name, COMMODITY_COLOURS[commodity]));"
-    #     edge_name = next_letter(edge_name)
-    # end
-    return diagram, tmp, s, components
+function mermaid_diagram(asset_type::Type{<:AbstractAsset}, filepath::AbstractString; orientation::String="TB")
+    diagram = mermaid_diagram(asset_type; orientation=orientation)
+    save_mermaid_diagram(diagram, filepath)
 end

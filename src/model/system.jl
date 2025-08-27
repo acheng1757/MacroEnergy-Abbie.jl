@@ -176,6 +176,24 @@ function find_node(nodes_list::Vector{Union{Node, Location}}, id::Symbol, commod
             return candidate
         end
     end
+    return nothing
+end
+
+function find_node(system::System, id::Symbol, commodity::Union{Missing,DataType}=missing)
+    @debug "Finding node $id of commodity $commodity"
+    candidate = find_node(system.locations, id, commodity)
+    if candidate !== nothing
+        return candidate
+    elseif system.settings.AutoCreateNodes
+        id = Symbol(rand(Int16))
+        @debug "Creating new $commodity node with id: $id"
+        new_node = Node{commodity}(; 
+            id = id,
+            timedata = system.time_data[Symbol(commodity)]
+        )
+        push!(system.locations, new_node)
+        return new_node
+    end
     error("Node $id not found")
     return nothing
 end
