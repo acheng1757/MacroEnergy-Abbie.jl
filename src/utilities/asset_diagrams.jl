@@ -142,10 +142,9 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
     edge_name = "a"
     edge_numbers = Dict{String, Int}()
     styling = ""
-    asset_name = (!UNIONALL_TYPE && !isempty(asset_type.parameters)) ? asset_type.name.wrapper : asset_type
     diagram = "$(mermaid_header())
         flowchart LR
-          subgraph $asset_name
+          subgraph \"$asset_type\"
           direction $orientation
     "
     (diagram, styling, components, vertex_name) = mermaid_parse_vertices!(diagram, styling, asset_type, vertex_name)
