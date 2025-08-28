@@ -14,9 +14,9 @@ Collects all the results as a `DataFrame` and then writes them to disk after the
 
 # Example
 ```julia
-write_results(case_path * "results.csv", system, model) # CSV
-write_results(case_path * "results.csv.gz", system, model)  # GZIP
-write_results(case_path * "results.parquet", system, model) # PARQUET
+write_results(case_path, system, model, settings, ext=".csv") # CSV
+write_results(case_path, system, model, settings, ext=".csv.gz")  # GZIP
+write_results(case_path, system, model, settings, ext=".parquet") # PARQUET
 ```
 """
 function write_results(file_path::AbstractString, system::System, model::Model, settings::NamedTuple; ext::AbstractString=".csv.gz")
