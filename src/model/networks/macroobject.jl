@@ -10,6 +10,10 @@ function get_components(macro_object::MacroObject)
     return [getfield(macro_object, name) for name in propertynames(macro_object) if name != :id]
 end
 
+function get_components_and_names(macro_object::MacroObject)
+    return [(getfield(macro_object, name), name) for name in propertynames(macro_object) if name != :id]
+end
+
 ## Helper/internal functions to extract MacroObjects from System
 # E.g., get_macro_objs(system, AbstractEdge)
 # E.g., get_macro_objs(asset, AbstractEdge, return_ids_map=true)

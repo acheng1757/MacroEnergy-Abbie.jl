@@ -191,11 +191,11 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
         styling *= "$(mermaid_external_node_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
         vertex_name = next_letter(vertex_name)
     end
-    for component in get_components(tmp)
+    for (component, name) in get_components_and_names(tmp)
         if isa(component, AbstractEdge)
             commodity = commodity_type(component)
             edge_numbers[edge_name] = length(edge_numbers)
-            diagram *= "$(find_diagram_name(components, component.start_vertex.id)) $edge_name@--> $(find_diagram_name(components, component.end_vertex.id)) \n "
+            diagram *= "$(find_diagram_name(components, component.start_vertex.id)) $edge_name@--$(name)--> $(find_diagram_name(components, component.end_vertex.id)) \n "
             styling *= "$(mermaid_edge_style("$edge_name", edge_numbers[edge_name], commodity_colour(Symbol(commodity)))) \n "
             edge_name = next_letter(edge_name)
         end
