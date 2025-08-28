@@ -1,25 +1,33 @@
+COMMODITY_COLOURS = Dict{Symbol, String}(
+    :Commodity => "#d3b683",   # VeryLightBrown
+    :Electricity => "#FFD700", # Gold
+    :Alumina => "#E5E5E5",     # LightGray
+    :Aluminum => "#A9A9A9",    # DarkGray
+    :AluminumScrap => "#A9A9A9", # DarkGray
+    :Bauxite => "#8B4513",     # SaddleBrown
+    :Biomass => "#6fc276",     # SoftGreen
+    :CO2Captured => "#A9A9A9", # DarkGray
+    :CO2 => "#A9A9A9",         # DarkGray
+    :Cement => "#ffb16d",      # Apricot
+    :Coal => "#2F4F4F",        # DarkSlateGray
+    :Graphite => "#d5869d",    # DullPink
+    :Hydrogen => "#FF69B4",    # HotPink
+    :LiquidFuels => "#ff9408", # Tangerine
+    :NaturalGas => "#c6fcff",  # LightSkyBlue
+    :Uranium => "#4B0082",     # Indigo
+)
 
-macro commodity_colours()
-    return quote
-        Dict(
-            :Commodity => "#d3b683",   # VeryLightBrown
-            :Electricity => "#FFD700", # Gold
-            :Alumina => "#E5E5E5",     # LightGray
-            :Aluminum => "#A9A9A9",    # DarkGray
-            :AluminumScrap => "#A9A9A9", # DarkGray
-            :Bauxite => "#8B4513",     # SaddleBrown
-            :Biomass => "#6fc276",     # SoftGreen
-            :CO2Captured => "#A9A9A9", # DarkGray
-            :CO2 => "#A9A9A9",         # DarkGray
-            :Cement => "#ffb16d",      # Apricot
-            :Coal => "#2F4F4F",        # DarkSlateGray
-            :Graphite => "#d5869d",    # DullPink
-            :Hydrogen => "#FF69B4",    # HotPink
-            :LiquidFuels => "#ff9408", # Tangerine
-            :NaturalGas => "#c6fcff",  # LightSkyBlue
-            :Uranium => "#4B0082",     # Indigo
-        )
+function random_colour()
+    return "#" * join(rand("ABCDEF0123456789", 6))
+end
+
+function commodity_colour(commodity::Symbol)
+    if haskey(COMMODITY_COLOURS, commodity)
+        return COMMODITY_COLOURS[commodity]
     end
+    new_colour = random_colour()
+    COMMODITY_COLOURS[commodity] = new_colour
+    return new_colour
 end
 
 function mermaid_header()
@@ -93,7 +101,6 @@ function find_diagram_name(components::AbstractDict, component_id::Symbol)
 end
 
 function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::Type{<:AbstractAsset}, vertex_name::String)
-    COMMODITY_COLOURS = @commodity_colours()
     components = Dict{Symbol, Dict{Symbol, Any}}()
     if isa(asset_type, UnionAll)
         asset_type = asset_type{Commodity}
@@ -110,7 +117,7 @@ function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::T
             commodity_name = string(commodity)
             diagram *= "$(vertex_name)[$commodity_name] \n "
             font_size = calc_font_size(commodity_name)
-            styling *= "$(mermaid_storage_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
+            styling *= "$(mermaid_storage_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
         elseif component <: Node
             commodity = commodity_type(component)
             components[name] = Dict{Symbol, Any}(
@@ -119,7 +126,7 @@ function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::T
             commodity_name = string(commodity)
             diagram *= "$(vertex_name)(($commodity_name)) \n "
             font_size = calc_font_size(commodity_name)
-            styling *= "$(mermaid_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
+            styling *= "$(mermaid_node_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
         elseif component <: Transformation
             components[name] = Dict{Symbol, Any}(
                 :diagram_name => vertex_name
@@ -172,7 +179,6 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
     for (field_name, details) in components
         details[:id] = getfield(tmp, field_name).id
     end
-    COMMODITY_COLOURS = @commodity_colours()
     for node in s.locations
         commodity = commodity_type(node)
         components[node.id] = Dict{Symbol, Any}(
@@ -182,7 +188,7 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
         commodity_name = string(commodity)
         diagram *= "$(vertex_name)(($commodity_name)) \n "
         font_size = calc_font_size(commodity_name)
-        styling *= "$(mermaid_external_node_style(vertex_name, COMMODITY_COLOURS[Symbol(commodity)], font_size)) \n "
+        styling *= "$(mermaid_external_node_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
         vertex_name = next_letter(vertex_name)
     end
     for component in get_components(tmp)
@@ -190,7 +196,7 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
             commodity = commodity_type(component)
             edge_numbers[edge_name] = length(edge_numbers)
             diagram *= "$(find_diagram_name(components, component.start_vertex.id)) $edge_name@--> $(find_diagram_name(components, component.end_vertex.id)) \n "
-            styling *= "$(mermaid_edge_style("$edge_name", edge_numbers[edge_name], COMMODITY_COLOURS[Symbol(commodity)])) \n "
+            styling *= "$(mermaid_edge_style("$edge_name", edge_numbers[edge_name], commodity_colour(Symbol(commodity)))) \n "
             edge_name = next_letter(edge_name)
         end
     end
