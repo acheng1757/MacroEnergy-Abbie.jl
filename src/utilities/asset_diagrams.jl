@@ -30,6 +30,22 @@ function commodity_colour(commodity::Symbol)
     return new_colour
 end
 
+function colour_darkness(colour_code::String)
+    red = parse(Int16, colour_code[2:3], base=16)
+    green = parse(Int16, colour_code[4:5], base=16)
+    blue = parse(Int16, colour_code[6:7], base=16)
+    return (red * 0.299 + green * 0.587 + blue * 0.114)
+end
+
+function dark_color(colour_code::String)
+    darkness = colour_darkness(colour_code)
+    if darkness < 128
+        return true
+    else
+        return false
+    end
+end
+
 function mermaid_header()
     return "```mermaid \n %%{init: {'theme': 'base', 'themeVariables': { 'background': '#D1EBDE' }}}%%"
 end
@@ -38,16 +54,16 @@ function mermaid_transform_style(name::String)
     return "style $name fill:black,stroke:black,color:black;"
 end
 
-function mermaid_node_style(name::String, fill::String, font_size::Int=21)
-    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black;"
+function mermaid_node_style(name::String, fill::String, font_size::Int=21, font_color::String="black")
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:$font_color;"
 end
 
-function mermaid_external_node_style(name::String, fill::String, font_size::Int=21)
-    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black,stroke-dasharray: 3,5;"
+function mermaid_external_node_style(name::String, fill::String, font_size::Int=21, font_color::String="black")
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:$font_color,stroke-dasharray: 3,5;"
 end
 
-function mermaid_storage_style(name::String, fill::String, font_size::Int=21)
-    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:black;"
+function mermaid_storage_style(name::String, fill::String, font_size::Int=21, font_color::String="black")
+    return "style $name font-size:$font_size,r:55px,fill:$fill,stroke:black,color:$font_color;"
 end
 
 function mermaid_edge_style(name::String, number::Int, stroke::String)
@@ -117,7 +133,9 @@ function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::T
             commodity_name = string(commodity)
             diagram *= "$(vertex_name)[$commodity_name] \n "
             font_size = calc_font_size(commodity_name)
-            styling *= "$(mermaid_storage_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
+            fill_color = commodity_colour(Symbol(commodity))
+            font_color = dark_color(fill_color) ? "white" : "black"
+            styling *= "$(mermaid_storage_style(vertex_name, fill_color, font_size, font_color)) \n "
         elseif component <: Node
             commodity = commodity_type(component)
             components[name] = Dict{Symbol, Any}(
@@ -126,7 +144,9 @@ function mermaid_parse_vertices!(diagram::String, styling::String, asset_type::T
             commodity_name = string(commodity)
             diagram *= "$(vertex_name)(($commodity_name)) \n "
             font_size = calc_font_size(commodity_name)
-            styling *= "$(mermaid_node_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
+            fill_color = commodity_colour(Symbol(commodity))
+            font_color = dark_color(fill_color) ? "white" : "black"
+            styling *= "$(mermaid_node_style(vertex_name, fill_color, font_size, font_color)) \n "
         elseif component <: Transformation
             components[name] = Dict{Symbol, Any}(
                 :diagram_name => vertex_name
@@ -188,7 +208,9 @@ function mermaid_diagram(asset_type::Type{<:AbstractAsset}; orientation::String=
         commodity_name = string(commodity)
         diagram *= "$(vertex_name)(($commodity_name)) \n "
         font_size = calc_font_size(commodity_name)
-        styling *= "$(mermaid_external_node_style(vertex_name, commodity_colour(Symbol(commodity)), font_size)) \n "
+        fill_color = commodity_colour(Symbol(commodity))
+        font_color = dark_color(fill_color) ? "white" : "black"
+        styling *= "$(mermaid_external_node_style(vertex_name, fill_color, font_size, font_color)) \n "
         vertex_name = next_letter(vertex_name)
     end
     for (component, name) in get_components_and_names(tmp)
