@@ -923,26 +923,7 @@ end
 Write results when using Myopic as solution algorithm. 
 """
 function write_outputs(case_path::AbstractString, case::Case, myopic_results::MyopicResults)
-    num_periods = number_of_periods(case);
-    periods = get_periods(case)
-    for (period_idx, period) in enumerate(periods)
-        @info("Writing results for period $period_idx")
-
-        create_discounted_cost_expressions!(myopic_results.models[period_idx], period, get_settings(case))
-
-        compute_undiscounted_costs!(myopic_results.models[period_idx], period, get_settings(case))
-        ## Create results directory to store the results
-        if num_periods > 1
-            # Create a directory for each period
-            results_dir = joinpath(case_path, "results_period_$period_idx")
-        else
-            # Create a directory for the single period
-            results_dir = joinpath(case_path, "results")
-        end
-        mkpath(results_dir)
-        write_outputs(results_dir, period, myopic_results.models[period_idx])
-    end
-    write_settings(case, joinpath(case_path, "settings.json"))
+    @debug("Outputs were already written during iteration.")
     return nothing
 end
 
