@@ -1,4 +1,4 @@
-COMMODITY_COLOURS = Dict{Symbol, String}(
+const COMMODITY_COLOURS = Dict{Symbol, String}(
     :Commodity => "#d3b683",   # VeryLightBrown
     :Electricity => "#FFD700", # Gold
     :Alumina => "#E5E5E5",     # LightGray
