@@ -294,6 +294,8 @@ export AbstractAsset,
     download_examples,
     example_readme,
     example_contents,
-    authenticate_github
+    authenticate_github,
+    mermaid_diagram,
+    save_mermaid_diagram
     
 end # module MacroEnergy

@@ -88,6 +88,17 @@ Base.@kwdef mutable struct Edge{T} <: AbstractEdge{T}
     @AbstractEdgeBaseAttributes()
 end
 
+commodity_type(::Type{AbstractEdge{T}}) where {T} = T
+function commodity_type(t::Type{AbstractEdge{<:T}}) where {T}
+    ub_type = t.var.ub
+    return commodity_type(AbstractEdge{ub_type})
+end
+commodity_type(::Type{Edge{T}}) where {T} = T
+function commodity_type(t::Type{Edge{<:T}}) where {T}
+    ub_type = t.var.ub
+    return commodity_type(Edge{ub_type})
+end
+
 function target_is_valid(commodity::Type{<:Commodity}, target::T) where T<:Union{Node, AbstractStorage}
     if commodity <: commodity_type(target)
         return true
@@ -411,6 +422,8 @@ Base.@kwdef mutable struct EdgeWithUC{T} <: AbstractEdge{T}
     ushut::JuMPVariable = Vector{VariableRef}()
     ustart::JuMPVariable = Vector{VariableRef}()
 end
+
+commodity_type(::Type{EdgeWithUC{T}}) where {T} = T
 
 function make_edge_UC(
     id::Symbol,
