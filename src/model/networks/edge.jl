@@ -89,7 +89,8 @@ Base.@kwdef mutable struct Edge{T} <: AbstractEdge{T}
 end
 
 function target_is_valid(commodity::Type{<:Commodity}, target::T) where T<:Union{Node, AbstractStorage}
-    if commodity <: commodity_type(target)
+    target_commodity = commodity_type(target)
+    if (commodity === target_commodity) || (commodity <: target_commodity)
         return true
     end
     return false
