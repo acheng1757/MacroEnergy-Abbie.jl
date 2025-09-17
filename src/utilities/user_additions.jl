@@ -54,9 +54,20 @@ function create_user_additions_module(case_path::AbstractString=pwd())
     close(io)
 end
 
-function write_user_subcommodities(case_path::AbstractString, subcommodities_lines::Vector{String})
+function write_user_subcommodities(case_path::AbstractString, subcommodities_lines::Set{String})
     user_subcommodities_path = user_additions_subcommodities_path(case_path)
+    @debug(" -- Writing subcommodities to file $(user_subcommodities_path)")
     mkpath(dirname(user_subcommodities_path))
+    # Read each lines from the file into a Set{String} to avoid duplicates
+    existing_lines = Set{String}()
+    if isfile(user_subcommodities_path)
+        for line in eachline(user_subcommodities_path) 
+            if !isempty(strip(line))
+                push!(existing_lines, line)
+            end
+        end
+    end
+    union!(subcommodities_lines, existing_lines)
     io = open(user_subcommodities_path, "w")
     for line in subcommodities_lines
         println(io, line)

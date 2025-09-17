@@ -95,9 +95,12 @@ end
 
 function check_and_convert_type(data::AbstractDict{Symbol,Any}, m::Module = MacroEnergy)
     if !haskey(data, :type)
-        throw(ArgumentError("Instance data does not have a :type field"))
+        throw(ArgumentError("Instance data requires a :type field"))
     end
     type = Symbol(data[:type])
+    if haskey(commodity_types(m), type)
+        return commodity_types(m)[type]
+    end
     validate_type_attribute(type, m)
     return getfield(m, type)
 end
