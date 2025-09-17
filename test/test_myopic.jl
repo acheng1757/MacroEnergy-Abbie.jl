@@ -41,18 +41,25 @@ function test_myopic_settings()
         default_settings = default_myopic_settings()
         @test haskey(default_settings, :ReturnModels)
         @test default_settings[:ReturnModels] == false
+        @test haskey(default_settings, :WriteModelLP)
+        @test default_settings[:WriteModelLP] == false
         @test isa(default_settings, Dict)
         @test isa(default_settings[:ReturnModels], Bool)
+        @test isa(default_settings[:WriteModelLP], Bool)
         
         # Test valid settings configurations
         valid_configs = [
-            Dict(:ReturnModels => true),
-            Dict(:ReturnModels => false)
+            Dict(:ReturnModels => true, :WriteModelLP => false),
+            Dict(:ReturnModels => false, :WriteModelLP => true),
+            Dict(:ReturnModels => true, :WriteModelLP => true),
+            Dict(:ReturnModels => false, :WriteModelLP => false)
         ]
         
         for config in valid_configs
             @test haskey(config, :ReturnModels)
             @test isa(config[:ReturnModels], Bool)
+            @test haskey(config, :WriteModelLP)
+            @test isa(config[:WriteModelLP], Bool)
         end
         
         # Test invalid settings
@@ -70,28 +77,35 @@ function test_myopic_case_integration()
         case_configs = [
             # Single period
             Dict(
-                :MyopicSettings => Dict(:ReturnModels => false),
+                :MyopicSettings => Dict(:ReturnModels => false, :WriteModelLP => false),
                 :SolutionAlgorithm => "Myopic",
                 :PeriodLengths => [10],
                 :DiscountRate => 0.045
             ),
             # Multi-period
             Dict(
-                :MyopicSettings => Dict(:ReturnModels => false),
+                :MyopicSettings => Dict(:ReturnModels => false, :WriteModelLP => false),
                 :SolutionAlgorithm => "Myopic",
                 :PeriodLengths => [5, 5, 5],
                 :DiscountRate => 0.045
             ),
             # Model retention
             Dict(
-                :MyopicSettings => Dict(:ReturnModels => true),
+                :MyopicSettings => Dict(:ReturnModels => true, :WriteModelLP => false),
+                :SolutionAlgorithm => "Myopic",
+                :PeriodLengths => [5, 5],
+                :DiscountRate => 0.045
+            ),
+            # LP writing enabled
+            Dict(
+                :MyopicSettings => Dict(:ReturnModels => false, :WriteModelLP => true),
                 :SolutionAlgorithm => "Myopic",
                 :PeriodLengths => [5, 5],
                 :DiscountRate => 0.045
             ),
             # Varied period lengths
             Dict(
-                :MyopicSettings => Dict(:ReturnModels => true),
+                :MyopicSettings => Dict(:ReturnModels => true, :WriteModelLP => false),
                 :SolutionAlgorithm => "Myopic",
                 :PeriodLengths => [1, 5, 10, 20],
                 :DiscountRate => 0.045
@@ -106,13 +120,15 @@ function test_myopic_case_integration()
             @test haskey(config, :DiscountRate)
             @test haskey(config, :MyopicSettings)
             @test haskey(config[:MyopicSettings], :ReturnModels)
+            @test haskey(config[:MyopicSettings], :WriteModelLP)
             
             # Test period lengths validity
             @test length(config[:PeriodLengths]) >= 1
             @test all(x -> x > 0, config[:PeriodLengths])
             
-            # Test ReturnModels is boolean
+            # Test ReturnModels and WriteModelLP are boolean
             @test isa(config[:MyopicSettings][:ReturnModels], Bool)
+            @test isa(config[:MyopicSettings][:WriteModelLP], Bool)
         end
     end
 end
@@ -139,6 +155,7 @@ function test_myopic_error_handling()
         )
         @test isempty(empty_myopic_settings[:MyopicSettings])
         @test !haskey(empty_myopic_settings[:MyopicSettings], :ReturnModels)
+        @test !haskey(empty_myopic_settings[:MyopicSettings], :WriteModelLP)
         
         # Test invalid ReturnModels type
         invalid_settings = Dict(:ReturnModels => "not_a_boolean")

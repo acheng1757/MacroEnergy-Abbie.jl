@@ -130,6 +130,14 @@ function write_period_outputs(output_path::AbstractString, case::Case, system::S
     create_discounted_cost_expressions!(model, system, get_settings(case))
     compute_undiscounted_costs!(model, system, get_settings(case))
     
+    # Write LP file if requested
+    myopic_settings = get_settings(case).MyopicSettings
+    if myopic_settings[:WriteModelLP]
+        @info(" -- Writing LP file for period $(period_idx)")
+        lp_filename = joinpath(results_dir, "model_period_$(period_idx).lp")
+        write_to_file(model, lp_filename)
+    end
+    
     # Write all outputs for this period
     write_outputs(results_dir, system, model)
 end

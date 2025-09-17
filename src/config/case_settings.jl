@@ -12,7 +12,8 @@ end
 
 function default_myopic_settings()
     return Dict(
-        :ReturnModels => false
+        :ReturnModels => false,
+        :WriteModelLP => false
     )
 end
 
@@ -199,4 +200,5 @@ end
 
 function validate_myopic_settings(myopic_settings::AbstractDict{Symbol,Any})
     @assert isa(myopic_settings[:ReturnModels], Bool)
+    @assert isa(myopic_settings[:WriteModelLP], Bool)
 end
