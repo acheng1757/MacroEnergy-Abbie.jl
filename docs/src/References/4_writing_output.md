@@ -63,3 +63,8 @@ MacroEnergy.write_results
 ```@docs
 MacroEnergy.MacroEnergy.write_outputs
 ```
+
+## `MacroEnergy.write_period_outputs`
+```@docs
+MacroEnergy.MacroEnergy.write_period_outputs
+```
