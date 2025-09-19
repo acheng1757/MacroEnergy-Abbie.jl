@@ -79,12 +79,13 @@ end
 
 # Function to write flow results from multiple dataframes
 # This function is used when the results are distributed across multiple processes
-function write_flows(results_dir::AbstractString, 
+function write_flows(file_path::AbstractString, 
     system::System, 
     flow_dfs::Vector{DataFrame}
 )
-    file_path = joinpath(results_dir, "flows.csv")
     @info("Writing flow results to $file_path")
+
+    # Concatenate flow results from subproblems belonging to the same period
     flow_results = reduce(vcat, flow_dfs)
     
     # Reshape if wide layout requested
