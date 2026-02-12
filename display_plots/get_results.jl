@@ -17,6 +17,10 @@ print("Adding CO2 cap duals now")
 MacroEnergy.write_co2_cap_duals(results_dir, system)
 println("CSV written to: ", joinpath(results_dir, "co2_cap_duals.csv"))
 
+# This will create co2_cap_duals.csv in the results_dir
+MacroEnergy.write_balance_duals(results_dir, system)
+println("CSV written to: ", joinpath(results_dir, "balance_duals.csv"))
+
 # Get the non served energy for each of the demand nodes
 locations_vector = system.locations
 node_ids = [id(n) for n in locations_vector if n isa Node]
