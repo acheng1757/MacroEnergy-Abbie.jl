@@ -7,9 +7,9 @@ import MacroEnergy: id, find_node, all_constraints_types, get_constraint_by_type
 system = systems[1]
 
 # ---- Results directory ----
-const BASE = "/Users/abbie/MacroEnergy-Abbie.jl/MacroEnergyExamples/dolphyn_conversion/SE_power"
+const BASE = "/Users/abbie/MacroEnergy-Abbie.jl/MacroEnergyExamples/dolphyn_conversion/1zone_SE_8736"
 make_path(parts...) = joinpath(BASE, parts...)
-results_dir = make_path("results_001", "results")
+results_dir = make_path("results_003", "results")
 
 print("Adding CO2 cap duals now")
 
