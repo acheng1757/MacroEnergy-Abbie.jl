@@ -212,7 +212,12 @@ include_all_in_folder("load_inputs")
 
 include_all_in_folder("write_outputs/")
 
-export AbstractAsset,
+include("model/assets/drymillethanolccs.jl")
+
+export 
+    Ethanol,
+    EthanolDryMillCCS
+    AbstractAsset,
     AbstractTypeConstraint,
     AgeBasedRetirementConstraint,
     AggregatedDemandConstraint,
