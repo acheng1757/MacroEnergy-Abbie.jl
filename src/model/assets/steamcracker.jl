@@ -1,19 +1,20 @@
 # steam cracker asset, which includes all thermal steam crackers + electrified steam crackers
-    # _consumption or _production are only distinguished if flow can go in either direction
-struct ThermalSteamCracker <: AbstractAsset
+# all asset parameters are per MWh ethane, normalizded by the primary feedstock
+struct SteamCracker <: AbstractAsset
     id::AssetId
     steamcracker_transform::Transformation
     elec_consumption_edge::Edge{<:Electricity}
     h2_consumption_edge::Edge{<:Hydrogen}
     h2_production_edge::Edge{<:Hydrogen}
     natgas_consumption_edge::Edge{<:NaturalGas}
-    ethane_edge::Edge{<:Ethane}
-    ethylene_edge::Edge{<:Ethylene}
+    natgas_production_edge::Edge{<:NaturalGas}
+    ethane_consumption_edge::Edge{<:Ethane}
+    ethylene_production_edge::Edge{<:Ethylene}
     co2_emission_edge::Edge{<:CO2}
     co2_captured_edge::Edge{<:CO2Captured}
 end
 
-function default_data(t::Type{ThermalSteamCracker}, id=missing, style="full")
+function default_data(t::Type{SteamCracker}, id=missing, style="full")
     if style == "full"
         return full_default_data(t, id)
     else
@@ -21,16 +22,17 @@ function default_data(t::Type{ThermalSteamCracker}, id=missing, style="full")
     end
 end
 
-function full_default_data(::Type{ThermalSteamCracker}, id=missing)
+function full_default_data(::Type{SteamCracker}, id=missing)
     return Dict{Symbol,Any}(
         :id => id,
         :transforms => @transform_data(
             :timedata => "Ethylene",
             :elec_consumption => 0.0,
-            #:h2_consumption => 0.0,
             :h2_production => 0.0,
+            :h2_consumption => 0.0,
             :natgas_consumption => 0.0,
-            :ethane_consumption => 0.0,
+            :natgas_production => 0.0,
+            :ethylene_production => 0.0,
             :emission_rate => 0.0,
             :capture_rate => 0.0,
             :constraints => Dict{Symbol, Bool}(
@@ -50,11 +52,14 @@ function full_default_data(::Type{ThermalSteamCracker}, id=missing)
             :natgas_consumption_edge => @edge_data(
                 :commodity => "NaturalGas"
             ),
-            :ethane_edge => @edge_data(
-                :commodity => "Ethane"
+            :natgas_production_edge => @edge_data(
+                :commodity => "NaturalGas"
             ),
-            :ethylene_edge => @edge_data(
-                :commodity=>"Ethylene",
+            :ethylene_production_edge => @edge_data(
+                :commodity => "Ethylene"
+            ),
+            :ethane_consumption_edge => @edge_data(
+                :commodity=>"Ethane",
                 :has_capacity => true,
                 :can_retire => true,
                 :can_expand => true,
@@ -78,7 +83,7 @@ function full_default_data(::Type{ThermalSteamCracker}, id=missing)
     )
 end
 
-function simple_default_data(::Type{ThermalSteamCracker}, id=missing)
+function simple_default_data(::Type{SteamCracker}, id=missing)
     return Dict{Symbol, Any}(
         :id => id,
         :location => missing,
@@ -88,10 +93,11 @@ function simple_default_data(::Type{ThermalSteamCracker}, id=missing)
         :capacity_size => 1.0,
         :timedata => "Ethylene",
         :elec_consumption => 0.0,
-        :h2_consumption => 0.0,
         :h2_production => 0.0,
+        :h2_consumption => 0.0,
         :natgas_consumption => 0.0,
-        :ethane_consumption => 0.0,
+        :natgas_production => 0.0,
+        :ethylene_production => 0.0,
         :emission_rate => 0.0,
         :capture_rate => 0.0,
         :co2_sink => missing,
@@ -101,7 +107,7 @@ function simple_default_data(::Type{ThermalSteamCracker}, id=missing)
     )
 end
 
-function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,Any}, system::System)
+function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, system::System)
     id = AssetId(data[:id])
 
     @setup_data(asset_type, data, id)
@@ -127,8 +133,8 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
     # electricity_consumption_edge
     elec_consumption_edge_key = :elec_consumption_edge
     @process_data(
-        elec_consumption_edge_data,
-        data[:edges][elec_consumption_edge_key],
+        elec_consumption_edge_data, 
+        data[:edges][elec_consumption_edge_key], 
         [
             (data[:edges][elec_consumption_edge_key], key),
             (data[:edges][elec_consumption_edge_key], Symbol("elec_consumption_", key)),
@@ -136,46 +142,19 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
         ]
     )
     @start_vertex(
-        elec_start_node,
+        elec_consumption_start_node,
         elec_consumption_edge_data,
         Electricity,
         [(elec_consumption_edge_data, :start_vertex), (data, :location)],
     )
-    elec_end_node = steamcracker_transform
+    elec_consumption_end_node = steamcracker_transform
     elec_consumption_edge = Edge(
         Symbol(id, "_", elec_consumption_edge_key),
         elec_consumption_edge_data,
         system.time_data[:Electricity],
         Electricity,
-        elec_start_node,
-        elec_end_node,
-    )
-
-    # h2_consumption_edge
-    h2_consumption_edge_key = :h2_consumption_edge
-    @process_data(
-        h2_consumption_edge_data,
-        data[:edges][h2_consumption_edge_key],
-        [
-            (data[:edges][h2_consumption_edge_key], key),
-            (data[:edges][h2_consumption_edge_key], Symbol("h2_consumption_", key)),
-            (data, Symbol("h2_consumption_", key)),
-        ]
-    )
-    @start_vertex(
-        h2_start_node,
-        h2_consumption_edge_data,
-        Hydrogen,
-        [(h2_consumption_edge_data, :start_vertex), (data, :location)],
-    )
-    h2_end_node = steamcracker_transform
-    h2_consumption_edge = Edge(
-        Symbol(id, "_", h2_consumption_edge_key),
-        h2_consumption_edge_data,
-        system.time_data[:Hydrogen],
-        Hydrogen,
-        h2_start_node,
-        h2_end_node,
+        elec_consumption_start_node,
+        elec_consumption_end_node,
     )
 
     # h2_production_edge
@@ -190,9 +169,9 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
             (data, key), 
         ]
     )
-    h2_start_node = steamcracker_transform
+    h2_production_start_node = steamcracker_transform
     @end_vertex(
-        h2_end_node,
+        h2_production_end_node,
         h2_production_edge_data,
         Hydrogen,
         [(h2_production_edge_data, :end_vertex), (data, :location)],
@@ -202,8 +181,35 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
         h2_production_edge_data,
         system.time_data[:Hydrogen],
         Hydrogen,
-        h2_start_node,
-        h2_end_node,
+        h2_production_start_node,
+        h2_production_end_node,
+    )
+
+    # h2_consumption edge
+    h2_consumption_edge_key = :h2_consumption_edge
+    @process_data(
+        h2_consumption_edge_data, 
+        data[:edges][h2_consumption_edge_key], 
+        [
+            (data[:edges][h2_consumption_edge_key], key),
+            (data[:edges][h2_consumption_edge_key], Symbol("h2_consumption_", key)),
+            (data, Symbol("h2_consumption_", key)),
+        ]
+    )
+    @start_vertex(
+        h2_consumption_start_node,
+        h2_consumption_edge_data,
+        Hydrogen,
+        [(h2_consumption_edge_data, :start_vertex), (data, :location)],
+    )
+    h2_consumption_end_node = steamcracker_transform
+    h2_consumption_edge = Edge(
+        Symbol(id, "_", h2_consumption_edge_key),
+        h2_consumption_edge_data,
+        system.time_data[:Hydrogen],
+        Hydrogen,
+        h2_consumption_start_node,
+        h2_consumption_end_node,
     )
 
     # natgas_consumption_edge
@@ -218,73 +224,101 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
         ]
     )
     @start_vertex(
-        natgas_start_node,
+        natgas_consumption_start_node,
         natgas_consumption_edge_data,
         NaturalGas,
         [(natgas_consumption_edge_data, :start_vertex), (data, :location)],
     )
-    natgas_end_node = steamcracker_transform
+    natgas_consumption_end_node = steamcracker_transform
     natgas_consumption_edge = Edge(
         Symbol(id, "_", natgas_consumption_edge_key),
         natgas_consumption_edge_data,
         system.time_data[:NaturalGas],
         NaturalGas,
-        natgas_start_node,
-        natgas_end_node,
+        natgas_consumption_start_node,
+        natgas_consumption_end_node,
+    )
+
+    # natgas_production_edge
+    natgas_production_edge_key = :natgas_production_edge
+    @process_data(
+        natgas_production_edge_data, 
+        data[:edges][natgas_production_edge_key], 
+        [
+            (data[:edges][natgas_production_edge_key], key),
+            (data[:edges][natgas_production_edge_key], Symbol("natgas_production_", key)),
+            (data, Symbol("natgas_production_", key)),
+            (data, key), 
+        ]
+    )
+    natgas_production_start_node = steamcracker_transform
+    @end_vertex(
+        natgas_production_end_node,
+        natgas_production_edge_data,
+        NaturalGas,
+        [(natgas_production_edge_data, :end_vertex), (data, :location)],
+    )
+    natgas_production_edge = Edge(
+        Symbol(id, "_", natgas_production_edge_key),
+        natgas_production_edge_data,
+        system.time_data[:NaturalGas],
+        NaturalGas,
+        natgas_production_start_node,
+        natgas_production_end_node,
     )
 
     # ethane_edge
-    ethane_edge_key = :ethane_edge
+    ethane_consumption_edge_key = :ethane_consumption_edge
     @process_data(
-        ethane_edge_data, 
-        data[:edges][ethane_edge_key], 
+        ethane_consumption_edge_data, 
+        data[:edges][ethane_consumption_edge_key], 
         [
-            (data[:edges][ethane_edge_key], key),
-            (data[:edges][ethane_edge_key], Symbol("ethane_", key)),
-            (data, Symbol("ethane_", key)),
+            (data[:edges][ethane_consumption_edge_key], key),
+            (data[:edges][ethane_consumption_edge_key], Symbol("ethane_consumption_", key)),
+            (data, Symbol("ethane_consumption_", key)),
         ]
     )
     @start_vertex(
-        ethane_start_node,
-        ethane_edge_data,
+        ethane_consumption_start_node,
+        ethane_consumption_edge_data,
         Ethane,
-        [(ethane_edge_data, :start_vertex), (data, :location)],
+        [(ethane_consumption_edge_data, :start_vertex), (data, :location)],
     )
-    ethane_end_node = steamcracker_transform
-    ethane_edge = Edge(
-        Symbol(id, "_", ethane_edge_key),
-        ethane_edge_data,
+    ethane_consumption_end_node = steamcracker_transform
+    ethane_consumption_edge = Edge(
+        Symbol(id, "_", ethane_consumption_edge_key),
+        ethane_consumption_edge_data,
         system.time_data[:Ethane],
         Ethane,
-        ethane_start_node,
-        ethane_end_node,
+        ethane_consumption_start_node,
+        ethane_consumption_end_node,
     )
 
     # ethylene_edge
-    ethylene_edge_key = :ethylene_edge
+    ethylene_production_edge_key = :ethylene_production_edge
     @process_data(
-        ethylene_edge_data, 
-        data[:edges][ethylene_edge_key], 
+        ethylene_production_edge_data, 
+        data[:edges][ethylene_production_edge_key], 
         [
-            (data[:edges][ethylene_edge_key], key),
-            (data[:edges][ethylene_edge_key], Symbol("ethylene_", key)),
-            (data, Symbol("ethylene_", key)),
+            (data[:edges][ethylene_production_edge_key], key),
+            (data[:edges][ethylene_production_edge_key], Symbol("ethylene_production_", key)),
+            (data, Symbol("ethylene_production_", key)),
         ]
     )
-    ethylene_start_node = steamcracker_transform
+    ethylene_production_start_node = steamcracker_transform
     @end_vertex(
-        ethylene_end_node,
-        ethylene_edge_data,
+        ethylene_production_end_node,
+        ethylene_production_edge_data,
         Ethylene,
-        [(ethylene_edge_data, :end_vertex), (data, :location)],
+        [(ethylene_production_edge_data, :end_vertex), (data, :location)],
     )
-    ethylene_edge = Edge(
-        Symbol(id, "_", ethylene_edge_key),
-        ethylene_edge_data,
+    ethylene_production_edge = Edge(
+        Symbol(id, "_", ethylene_production_edge_key),
+        ethylene_production_edge_data,
         system.time_data[:Ethylene],
         Ethylene,
-        ethylene_start_node,
-        ethylene_end_node,
+        ethylene_production_start_node,
+        ethylene_production_end_node,
     )
 
     # co2_emission_edge
@@ -323,7 +357,7 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
             (data[:edges][co2_captured_edge_key], key),
             (data[:edges][co2_captured_edge_key], Symbol("co2_captured_", key)),
             (data, Symbol("co2_captured_", key)),
-        ]
+        ],
     )
     co2_captured_start_node = steamcracker_transform
     @end_vertex(
@@ -346,38 +380,44 @@ function make(asset_type::Type{ThermalSteamCracker}, data::AbstractDict{Symbol,A
         steamcracker_transform.balance_data = Dict(
 
         :elec_consumption => Dict(
-            ethylene_edge.id => get(transform_data, :elec_consumption, 0.0),
-            elec_consumption_edge.id => -1.0
+            elec_consumption_edge.id => -1.0,
+            ethane_consumption_edge.id => get(transform_data, :elec_consumption, 0.0),
         ),
 
         :h2_production => Dict(
             h2_production_edge.id => 1.0,
-            ethylene_edge.id => get(transform_data, :h2_production, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :h2_production, 0.0)
         ),
+
         :h2_consumption => Dict(
             h2_consumption_edge.id => -1.0,
-            ethylene_edge.id => get(transform_data, :h2_consumption, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :h2_consumption, 0.0)
         ),
 
         :natgas_consumption => Dict(
-            ethylene_edge.id => get(transform_data, :natgas_consumption, 0.0),
+            ethane_consumption_edge.id => get(transform_data, :natgas_consumption, 0.0),
             natgas_consumption_edge.id => -1.0
         ),
+
+        :natgas_production => Dict(
+            natgas_production_edge.id => 1.0,
+            ethane_consumption_edge.id => get(transform_data, :natgas_production, 0.0)
+        ),
         
-        :ethane => Dict(
-            ethylene_edge.id => get(transform_data, :ethane_consumption, 0.0),
-            ethane_edge.id => -1.0
+        :ethylene_production => Dict(
+            ethane_consumption_edge.id => get(transform_data, :ethylene_production, 0.0),
+            ethylene_production_edge.id => 1.0
         ),
 
         :co2_emissions => Dict(
             co2_emission_edge.id => 1.0,
-            ethylene_edge.id => get(transform_data, :emission_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :emission_rate, 0.0)
         ),
 
         :co2_capture => Dict(
             co2_captured_edge.id => 1.0,
-            ethylene_edge.id => get(transform_data, :capture_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :capture_rate, 0.0)
         )
     )
-    return ThermalSteamCracker(id, steamcracker_transform, elec_consumption_edge, h2_production_edge, h2_consumption_edge, natgas_consumption_edge, ethane_edge, ethylene_edge, co2_emission_edge, co2_captured_edge)
+    return SteamCracker(id, steamcracker_transform, elec_consumption_edge, h2_production_edge, h2_consumption_edge, natgas_consumption_edge, natgas_production_edge, ethane_consumption_edge, ethylene_production_edge, co2_emission_edge, co2_captured_edge)
 end
