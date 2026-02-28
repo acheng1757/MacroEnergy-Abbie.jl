@@ -53,8 +53,9 @@ abstract type Methanol <: Commodity end ## MWh
 abstract type Nitrogen <: Commodity end ## tonnes
 abstract type Heat <: Commodity end ## MWh
 abstract type Steam <: Commodity end ## MWh
+
 abstract type Ethane <: Commodity end ## MWh
-abstract type Ethylene <: Commodity end ## MWh
+abstract type Ethylene <: Commodity end ## tonnes
 
 ## Time data types
 abstract type AbstractTimeData{T<:Commodity} end
@@ -208,7 +209,7 @@ include("model/assets/electricheating.jl")
 include("model/assets/thermalsteam.jl")
 include("model/assets/electricsteam.jl")
 
-include("model/assets/steamcracker.jl") # thermal steam cracker and electric steam cracker
+include("model/assets/thermalsteamcracker.jl") # thermal steam cracker and electric steam cracker
 
 include("config/configure_settings.jl")
 include("config/case_settings.jl")
@@ -219,7 +220,7 @@ include_all_in_folder("write_outputs/")
 export 
     Ethanol,
     EthanolDryMillCCS,
-    SteamCracker,
+    ThermalSteamCracker,
     Ethane,
     Ethylene,
     AbstractAsset,
