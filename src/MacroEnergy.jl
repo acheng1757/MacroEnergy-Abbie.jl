@@ -54,6 +54,7 @@ abstract type Nitrogen <: Commodity end ## tonnes
 abstract type Heat <: Commodity end ## MWh
 abstract type Steam <: Commodity end ## MWh
 
+# Adding ethylene assets
 abstract type Ethane <: Commodity end ## MWh
 abstract type Ethylene <: Commodity end ## tonnes
 
