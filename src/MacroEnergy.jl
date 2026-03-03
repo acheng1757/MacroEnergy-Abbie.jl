@@ -209,9 +209,13 @@ include("model/assets/electricheating.jl")
 include("model/assets/thermalsteam.jl")
 include("model/assets/electricsteam.jl")
 
+# ethylene production
 include("model/assets/steamcracker.jl") # thermal steam cracker and electric steam cracker
 include("model/assets/ethanoldehydration.jl")
 include("model/assets/syntheticethylene.jl")
+
+# ethanol production
+include("model/assets/bioethanol.jl")
 
 include("config/configure_settings.jl")
 include("config/case_settings.jl")
@@ -220,8 +224,9 @@ include_all_in_folder("load_inputs")
 include_all_in_folder("write_outputs/")
 
 export 
-    Ethanol,
-    EthanolDryMillCCS,
+    BioEthanol,
+    Ethanol
+    
     SteamCracker,
     Ethane,
     Ethylene,
