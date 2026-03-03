@@ -379,7 +379,7 @@ function make(asset_type::Type{EthanolUpgrade}, data::AbstractDict{Symbol,Any}, 
     ethanolupgrade_transform.balance_data = Dict(
         :gasoline_production => Dict(
             gasoline_production_edge.id => 1.0,
-            biomass_consumption_edge.id => get(transform_data, :gasoline_production, 0.0)
+            ethanol_consumption_edge.id => get(transform_data, :gasoline_production, 0.0)
         ),
         :jetfuel_production => Dict(
             jetfuel_production_edge.id => 1.0,
