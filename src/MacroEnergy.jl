@@ -210,6 +210,7 @@ include("model/assets/electricsteam.jl")
 
 # ethanol production
 include("model/assets/bioethanol.jl")
+include("model/assets/e10blend.jl")
 
 # ethanol upgrade
 include("model/assets/ethanolupgrade.jl")
@@ -228,6 +229,7 @@ include_all_in_folder("write_outputs/")
 export 
     EthanolUpgrade,
     BioEthanol,
+    E10Blend,
     
     Ethane,
     Ethylene,
