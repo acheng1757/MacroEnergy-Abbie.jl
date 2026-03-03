@@ -53,10 +53,8 @@ abstract type Methanol <: Commodity end ## MWh
 abstract type Nitrogen <: Commodity end ## tonnes
 abstract type Heat <: Commodity end ## MWh
 abstract type Steam <: Commodity end ## MWh
-
-# Adding ethylene assets
-abstract type Ethane <: Commodity end ## MWh
 abstract type Ethylene <: Commodity end ## tonnes
+abstract type Ethane <: Commodity end ## MWh
 
 ## Time data types
 abstract type AbstractTimeData{T<:Commodity} end
@@ -210,12 +208,6 @@ include("model/assets/electricheating.jl")
 include("model/assets/thermalsteam.jl")
 include("model/assets/electricsteam.jl")
 
-# ethylene production
-include("model/assets/steamcracker.jl") # thermal steam cracker and electric steam cracker
-include("model/assets/ethanoldehydration.jl")
-include("model/assets/syntheticethylene.jl")
-
-# ethanol production
 include("model/assets/bioethanol.jl")
 
 include("config/configure_settings.jl")
@@ -224,15 +216,11 @@ include_all_in_folder("load_inputs")
 
 include_all_in_folder("write_outputs/")
 
-export
+export 
+
     BioEthanol,
-    Ethanol
-    
-    SteamCracker,
     Ethane,
     Ethylene,
-    EthanolDehydration,
-    SyntheticEthylene,
 
     AbstractAsset,
     AbstractTypeConstraint,
@@ -317,7 +305,7 @@ export
     MustRunConstraint,
     NaturalGas,
     NaturalGasDAC,
-    #NaturalGasFossilUpstream,
+    NaturalGasFossilUpstream,
     Node,
     OperationConstraint,
     PlanningConstraint,

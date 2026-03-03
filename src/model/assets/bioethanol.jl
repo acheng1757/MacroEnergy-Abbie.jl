@@ -257,13 +257,13 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
     )
 
     # co2 content edge
-    co2_content_edge_key = :co2_content
+    co2_content_edge_key = :co2_content_edge
     @process_data(
-        co2_content_data,
-        data[:edges][co2_content_key],
+        co2_content_edge_data,
+        data[:edges][co2_content_edge_key],
         [
-            (data[:edges][co2_content_key], key),
-            (data[:edges][co2_content_key], Symbol("co2_content_", key)),
+            (data[:edges][co2_content_edge_key], key),
+            (data[:edges][co2_content_edge_key], Symbol("co2_content_", key)),
             (data, Symbol("co2_content_", key)),
         ]
     )
