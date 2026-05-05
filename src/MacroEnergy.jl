@@ -53,6 +53,8 @@ abstract type Methanol <: Commodity end ## MWh
 abstract type Nitrogen <: Commodity end ## tonnes
 abstract type Heat <: Commodity end ## MWh
 abstract type Steam <: Commodity end ## MWh
+abstract type Ethylene <: Commodity end ## tonnes
+abstract type Ethane <: Commodity end ## MWh
 
 ## Time data types
 abstract type AbstractTimeData{T<:Commodity} end
@@ -224,6 +226,9 @@ include("model/assets/thermalheating.jl")
 include("model/assets/electricheating.jl")
 include("model/assets/thermalsteam.jl")
 include("model/assets/electricsteam.jl")
+include("model/assets/constrainedfossilliquidfuels.jl")
+include("model/assets/bioethanol.jl")
+include("model/assets/ethanoldehydration.jl")
 
 include("config/configure_settings.jl")
 include("config/case_settings.jl")
@@ -231,7 +236,12 @@ include_all_in_folder("load_inputs")
 
 include_all_in_folder("write_outputs/")
 
-export AbstractAsset,
+export 
+    BioEthanol,
+    EthanolDehydration,
+    Ethylene,
+    Ethane,
+    AbstractAsset,
     AbstractTypeConstraint,
     AgeBasedRetirementConstraint,
     AggregatedDemandConstraint,
@@ -245,6 +255,7 @@ export AbstractAsset,
     BalanceConstraint,
     Battery,
     Biomass,
+    ConstrainedFossilLiquidFuels,
     Coal,
     Cement,
     CrudeSteel,
