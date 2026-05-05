@@ -229,6 +229,8 @@ include("model/assets/electricsteam.jl")
 include("model/assets/constrainedfossilliquidfuels.jl")
 include("model/assets/bioethanol.jl")
 include("model/assets/ethanoldehydration.jl")
+include("model/assets/syntheticethylene.jl")
+include("model/assets/steamcracker.jl")
 
 include("config/configure_settings.jl")
 include("config/case_settings.jl")
