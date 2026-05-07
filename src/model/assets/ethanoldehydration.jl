@@ -31,8 +31,10 @@ function full_default_data(::Type{EthanolDehydration}, id=missing)
             :natgas_consumption => 0.0,
             :elec_consumption => 0.0,
             :ethylene_production => 0.0,
-            :emission_rate => 1.0,
-            :capture_rate => 1.0
+            :process_emission_rate => 1.0,
+            :process_capture_rate => 1.0,
+            :fuel_emission_rate => 0.0,
+            :fuel_capture_rate => 0.0,
         ),
         :edges => Dict{Symbol,Any}(
             :ethanol_consumption_edge => @edge_data(
@@ -79,8 +81,10 @@ function simple_default_data(::Type{EthanolDehydration}, id=missing)
         :h2_consumption => 0.0,
         :natgas_consumption => 0.0,
         :ethylene_production => 0.0,
-        :emission_rate => 1.0,
-        :capture_rate => 1.0,
+        :process_emission_rate => 1.0,
+        :process_capture_rate => 1.0,
+        :fuel_emission_rate => 0.0,
+        :fuel_capture_rate => 0.0,
         :investment_cost => 0.0,
         :fixed_om_cost => 0.0,
         :variable_om_cost => 0.0,
@@ -322,11 +326,13 @@ function make(asset_type::Type{EthanolDehydration}, data::AbstractDict{Symbol,An
             ethanol_consumption_edge.id => get(transform_data, :ethylene_production, 0.0)
         ),
         :emissions => Dict(
-            ethanol_consumption_edge.id => get(transform_data, :emission_rate, 1.0),
+            ethanol_consumption_edge.id => get(transform_data, :process_emission_rate, 1.0),
+            ethanol_consumption_edge.id => get(transform_data, :fuel_emission_rate, 1.0),
             co2_emission_edge.id => 1.0
         ),
-        :capture =>Dict(
-            ethanol_consumption_edge.id => get(transform_data, :capture_rate, 1.0),
+        :capture => Dict(
+            ethanol_consumption_edge.id => get(transform_data, :process_capture_rate, 1.0),
+            ethanol_consumption_edge.id => get(transform_data, :fuel_capture_rate, 1.0),
             co2_captured_edge.id => 1.0
         )
     )

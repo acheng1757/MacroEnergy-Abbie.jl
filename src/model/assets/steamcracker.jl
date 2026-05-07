@@ -33,8 +33,10 @@ function full_default_data(::Type{SteamCracker}, id=missing)
             :natgas_consumption => 0.0,
             :natgas_production => 0.0,
             :ethylene_production => 0.0,
-            :emission_rate => 0.0,
-            :capture_rate => 0.0,
+            :process_emission_rate => 0.0,
+            :process_capture_rate => 0.0,
+            :fuel_emission_rate => 0.0,
+            :fuel_capture_rate => 0.0,
             :constraints => Dict{Symbol, Bool}(
                 :BalanceConstraint => true,
             ),
@@ -98,8 +100,10 @@ function simple_default_data(::Type{SteamCracker}, id=missing)
         :natgas_consumption => 0.0,
         :natgas_production => 0.0,
         :ethylene_production => 0.0,
-        :emission_rate => 0.0,
-        :capture_rate => 0.0,
+        :process_emission_rate => 0.0,
+        :process_capture_rate => 0.0,
+        :fuel_emission_rate => 0.0,
+        :fuel_capture_rate => 0.0,
         :co2_sink => missing,
         :investment_cost => 0.0,
         :fixed_om_cost => 0.0,
@@ -411,12 +415,14 @@ function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, sy
 
         :co2_emissions => Dict(
             co2_emission_edge.id => 1.0,
-            ethane_consumption_edge.id => get(transform_data, :emission_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :process_emission_rate, 0.0),
+            ethane_consumption_edge.id => get(transform_data, :fuel_emission_rate, 0.0)
         ),
 
         :co2_capture => Dict(
             co2_captured_edge.id => 1.0,
-            ethane_consumption_edge.id => get(transform_data, :capture_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :process_capture_rate, 0.0),
+            ethane_consumption_edge.id => get(transform_data, :fuel_capture_rate, 0.0)
         )
     )
     return SteamCracker(id, steamcracker_transform, elec_consumption_edge, h2_production_edge, h2_consumption_edge, natgas_consumption_edge, natgas_production_edge, ethane_consumption_edge, ethylene_production_edge, co2_emission_edge, co2_captured_edge)
