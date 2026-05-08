@@ -243,6 +243,8 @@ export
     EthanolDehydration,
     Ethylene,
     Ethane,
+    SteamCracker,
+    SyntheticEthylene,
     AbstractAsset,
     AbstractTypeConstraint,
     AgeBasedRetirementConstraint,

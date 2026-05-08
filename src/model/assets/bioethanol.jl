@@ -366,7 +366,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             biomass_consumption_edge.id => get(transform_data, :emission_rate, 1.0),
             co2_emission_edge.id => 1.0
         ),
-        :capture =>Dict(
+        :capture => Dict(
             biomass_consumption_edge.id => get(transform_data, :capture_rate, 1.0),
             co2_captured_edge.id => 1.0
         )
