@@ -252,33 +252,35 @@ function get_optimal_capacity_by_field(
     # Check if the objects is empty
     isempty(objs) && return DataFrame()
 
-    # Calculate total number of rows needed
-    total_rows = length(objs) * length(field_list)
+    # Pre-filter valid (obj, field) pairs where the method exists
+    valid_pairs = [(obj, f) for obj in objs for f in field_list if hasmethod(f, (typeof(obj),))]
+    isempty(valid_pairs) && return DataFrame()
+    total_rows = length(valid_pairs)
     
     if isempty(obj_asset_map)
         return DataFrame(
-            case_name = fill(missing, total_rows),
-            commodity = [get_commodity_name(obj) for obj in objs for f in field_list],
-            zone = [get_zone_name(obj) for obj in objs for f in field_list],
-            resource_id = [get_component_id(obj) for obj in objs for f in field_list],  # component id is same as resource id
-            component_id = [get_component_id(obj) for obj in objs for f in field_list],
-            component_type = [get_type(obj) for obj in objs for f in field_list],
-            variable = [Symbol(f) for obj in objs for f in field_list],
-            year = fill(missing, total_rows),
-            value = [Float64(value(f(obj))) * scaling for obj in objs for f in field_list]
+            case_name      = fill(missing, total_rows),
+            commodity      = [get_commodity_name(obj) for (obj, f) in valid_pairs],
+            zone           = [get_zone_name(obj) for (obj, f) in valid_pairs],
+            resource_id    = [get_component_id(obj) for (obj, f) in valid_pairs],
+            component_id   = [get_component_id(obj) for (obj, f) in valid_pairs],
+            component_type = [get_type(obj) for (obj, f) in valid_pairs],
+            variable       = [Symbol(f) for (obj, f) in valid_pairs],
+            year           = fill(missing, total_rows),
+            value          = [Float64(value(f(obj))) * scaling for (obj, f) in valid_pairs]
         )
     else
         return DataFrame(
-            case_name = fill(missing, total_rows),
-            commodity = [get_commodity_name(obj) for obj in objs for f in field_list],
-            zone = [get_zone_name(obj) for obj in objs for f in field_list],
-            resource_id = [get_resource_id(obj, obj_asset_map) for obj in objs for f in field_list],
-            component_id = [get_component_id(obj) for obj in objs for f in field_list],
-            resource_type = [get_type(obj_asset_map[id(obj)]) for obj in objs for f in field_list],
-            component_type = [get_type(obj) for obj in objs for f in field_list],
-            variable = [Symbol(f) for obj in objs for f in field_list],
-            year = fill(missing, total_rows),
-            value = [Float64(value(f(obj))) * scaling for obj in objs for f in field_list]
+            case_name      = fill(missing, total_rows),
+            commodity      = [get_commodity_name(obj) for (obj, f) in valid_pairs],
+            zone           = [get_zone_name(obj) for (obj, f) in valid_pairs],
+            resource_id    = [get_resource_id(obj, obj_asset_map) for (obj, f) in valid_pairs],
+            component_id   = [get_component_id(obj) for (obj, f) in valid_pairs],
+            resource_type  = [get_type(obj_asset_map[id(obj)]) for (obj, f) in valid_pairs],
+            component_type = [get_type(obj) for (obj, f) in valid_pairs],
+            variable       = [Symbol(f) for (obj, f) in valid_pairs],
+            year           = fill(missing, total_rows),
+            value          = [Float64(value(f(obj))) * scaling for (obj, f) in valid_pairs]
         )
     end
 end

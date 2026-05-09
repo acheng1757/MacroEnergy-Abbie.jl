@@ -8,6 +8,8 @@ function make_retrofit_options(system::System, data::Dict{Symbol,Any})
             push!(retrofit_id_list, retrofit_id)
 
             # Copy template asset and merge data from retrofitting option
+            @show retrofit_option_data[:template_id]  # should print "NCEN_ESC"
+            @show retrofit_option_data[:id]           # should print "NCEN_ESC_RETROFIT"
             template_asset = Symbol(retrofit_option_data[:template_id])
             template_asset_data = get_input_data_by_id(system, template_asset)
             retrofit_data = recursive_merge(template_asset_data, retrofit_option_data)
@@ -21,6 +23,36 @@ function make_retrofit_options(system::System, data::Dict{Symbol,Any})
                     attributes[:retrofit_id] = [retrofit_id] # Adds the retrofit_id to the retrofitting edge
                     attributes[:can_expand] = true # Make sure retroftting edge can expand
                 end
+            end
+
+            # DEBUG: check is_retrofit is set correctly BEFORE second merge
+            @show "BEFORE second merge:"
+            for (edge, attributes) in retrofit_data[:edges]
+                @show edge, get(attributes, :is_retrofit, false), get(attributes, :retrofit_id, missing)
+            end
+
+            if !haskey(retrofit_data, :type)
+                error("retrofit_data for retrofit option '$(retrofit_option_data[:id])' is missing a :type key. " *
+                    "Check that template asset '$(template_asset)' has a :type field, or specify :type in the retrofit option data.")
+            end
+
+            template_asset = Symbol(retrofit_option_data[:template_id])
+            template_asset_data = get_input_data_by_id(system, template_asset)
+
+            if isnothing(template_asset_data)
+                error("Could not find template asset '$(template_asset)' in system. " *
+                    "Check that :template_id in your retrofit option matches an existing asset id.")
+            end
+
+            # DEBUG: check is_retrofit AFTER second merge
+            @show "AFTER second merge:"
+            for (edge, attributes) in retrofit_data[:edges]
+                @show edge, get(attributes, :is_retrofit, false), get(attributes, :retrofit_id, missing)
+            end
+
+            if isnothing(retrofit_data)
+                error("recursive_merge returned nothing for template '$(template_asset)' " *
+                    "and retrofit option '$(retrofit_option_data[:id])'")
             end
             
             # Add the retrofitting asset to the system
@@ -62,10 +94,21 @@ Where $$e$$ is the edge that can be retrofitted, $$R$$ is the set of edges that 
 !!! note "Turning on retrofitting in settings"
     This constraint is only applied if the ```Retrofitting: true``` setting is set in ```macro_settings.json```.
 """
+
 function add_retrofit_constraints!(system::System, period_idx::Int, model::Model)
     # Add retrofitting constraints
     
     can_retrofit_edges,is_retrofit_edges = get_retrofit_edges(system)
+
+    # DEBUG
+    @show keys(can_retrofit_edges)
+    @show keys(is_retrofit_edges)
+    for (id, edge) in can_retrofit_edges
+        @show id, retrofit_id(edge)
+    end
+    for (id, edge) in is_retrofit_edges
+        @show id, is_retrofit(edge), retrofit_id(edge)
+    end
     
     @constraint(model, [edge_id in keys(can_retrofit_edges)],
         retrofitted_capacity(can_retrofit_edges[edge_id]) ==
