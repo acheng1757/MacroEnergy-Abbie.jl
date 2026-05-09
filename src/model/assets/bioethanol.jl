@@ -33,7 +33,7 @@ function full_default_data(::Type{BioEthanol}, id=missing)
             :elec_production => 0.0,
             :ethanol_production => 0.0,
             :emission_rate => 1.0,
-            :capture_rate => 1.0
+            :capture_rate => 1.0,
         ),
         :edges => Dict{Symbol,Any}(
             :biomass_consumption_edge => @edge_data(
@@ -90,7 +90,8 @@ function simple_default_data(::Type{BioEthanol}, id=missing)
         :investment_cost => 0.0,
         :fixed_om_cost => 0.0,
         :variable_om_cost => 0.0,
-        :fuel_commodity => "LiquidFuels",
+        :ethanol_commodity => "LiquidFuels",
+        :biomass_commodity => "Biomass",
     )
 end
 

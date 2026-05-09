@@ -114,7 +114,7 @@ function make(asset_type::Type{EthanolDehydration}, data::AbstractDict{Symbol,An
         constraints = transform_data[:constraints],
     )
 
-    # ethanol input edge
+    # ethanol input edge (special)
     ethanol_consumption_edge_key = :ethanol_consumption_edge
     @process_data(
         ethanol_consumption_edge_data,
