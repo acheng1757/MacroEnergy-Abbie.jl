@@ -26,7 +26,7 @@ function full_default_data(::Type{SteamCracker}, id=missing)
     return Dict{Symbol,Any}(
         :id => id,
         :transforms => @transform_data(
-            :timedata => "Ethylene",
+            :timedata => "Ethane",
             :elec_consumption => 0.0,
             :h2_production => 0.0,
             :h2_consumption => 0.0,
@@ -93,7 +93,7 @@ function simple_default_data(::Type{SteamCracker}, id=missing)
         :can_retire => true,
         :existing_capacity => 0.0,
         :capacity_size => 1.0,
-        :timedata => "Ethylene",
+        :timedata => "Ethane",
         :elec_consumption => 0.0,
         :h2_production => 0.0,
         :h2_consumption => 0.0,
