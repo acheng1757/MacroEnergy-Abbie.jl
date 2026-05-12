@@ -43,7 +43,8 @@ function full_default_data(::Type{BioEthanol}, id=missing)
                 :can_retire => true,
                 :constraints => Dict{Symbol,Bool}(
                     :CapacityConstraint => true,
-                )
+                ),
+                :min_flow_fraction => 0.0,
             ),
             :ethanol_production_edge => @edge_data(
                 :commodity => "LiquidFuels",
@@ -92,6 +93,7 @@ function simple_default_data(::Type{BioEthanol}, id=missing)
         :variable_om_cost => 0.0,
         :ethanol_commodity => "LiquidFuels",
         :biomass_commodity => "Biomass",
+        :min_flow_fraction => 0.0,
     )
 end
 

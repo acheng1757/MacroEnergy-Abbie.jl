@@ -326,13 +326,13 @@ function make(asset_type::Type{EthanolDehydration}, data::AbstractDict{Symbol,An
             ethanol_consumption_edge.id => get(transform_data, :ethylene_production, 0.0)
         ),
         :emissions => Dict(
-            ethanol_consumption_edge.id => get(transform_data, :process_emission_rate, 1.0),
-            ethanol_consumption_edge.id => get(transform_data, :fuel_emission_rate, 1.0),
+            ethanol_consumption_edge.id => get(transform_data, :process_emission_rate, 1.0)
+                                        + get(transform_data, :fuel_emission_rate, 0.0),
             co2_emission_edge.id => 1.0
         ),
         :capture => Dict(
-            ethanol_consumption_edge.id => get(transform_data, :process_capture_rate, 1.0),
-            ethanol_consumption_edge.id => get(transform_data, :fuel_capture_rate, 1.0),
+            ethanol_consumption_edge.id => get(transform_data, :process_capture_rate, 1.0)
+                                        + get(transform_data, :fuel_capture_rate, 0.0),
             co2_captured_edge.id => 1.0
         )
     )

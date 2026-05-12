@@ -415,15 +415,16 @@ function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, sy
 
         :co2_emissions => Dict(
             co2_emission_edge.id => 1.0,
-            ethane_consumption_edge.id => get(transform_data, :process_emission_rate, 0.0),
-            ethane_consumption_edge.id => get(transform_data, :fuel_emission_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :process_emission_rate, 0.0)
+                                + get(transform_data, :fuel_emission_rate, 0.0)
         ),
 
         :co2_capture => Dict(
             co2_captured_edge.id => 1.0,
-            ethane_consumption_edge.id => get(transform_data, :process_capture_rate, 0.0),
-            ethane_consumption_edge.id => get(transform_data, :fuel_capture_rate, 0.0)
+            ethane_consumption_edge.id => get(transform_data, :process_capture_rate, 0.0)
+                                + get(transform_data, :fuel_capture_rate, 0.0)
+        ),
         )
-    )
-    return SteamCracker(id, steamcracker_transform, elec_consumption_edge, h2_production_edge, h2_consumption_edge, natgas_consumption_edge, natgas_production_edge, ethane_consumption_edge, ethylene_production_edge, co2_emission_edge, co2_captured_edge)
+
+    return SteamCracker(id, steamcracker_transform, elec_consumption_edge, h2_consumption_edge, h2_production_edge, natgas_consumption_edge, natgas_production_edge, ethane_consumption_edge, ethylene_production_edge, co2_emission_edge, co2_captured_edge)
 end
