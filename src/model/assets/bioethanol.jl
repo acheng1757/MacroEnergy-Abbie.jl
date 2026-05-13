@@ -32,8 +32,10 @@ function full_default_data(::Type{BioEthanol}, id=missing)
             :elec_consumption => 0.0,
             :elec_production => 0.0,
             :ethanol_production => 0.0,
-            :emission_rate => 1.0,
-            :capture_rate => 1.0,
+            :process_emission_rate => 1.0,
+            :process_capture_rate => 1.0,
+            :fuel_emission_rate => 0.0,
+            :fuel_capture_rate => 0.0,
         ),
         :edges => Dict{Symbol,Any}(
             :biomass_consumption_edge => @edge_data(
@@ -86,8 +88,10 @@ function simple_default_data(::Type{BioEthanol}, id=missing)
         :elec_consumption => 0.0,
         :elec_production => 0.0,
         :co2_biomass_content => 0.0,
-        :emission_rate => 1.0,
-        :capture_rate => 1.0,
+        :process_emission_rate => 1.0,
+        :process_capture_rate => 1.0,
+        :fuel_emission_rate => 0.0,
+        :fuel_capture_rate => 0.0,
         :investment_cost => 0.0,
         :fixed_om_cost => 0.0,
         :variable_om_cost => 0.0,
@@ -365,14 +369,17 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             biomass_consumption_edge.id => get(transform_data, :co2_biomass_content, 0.0),
             co2_content_edge.id => -1.0
         ),
-        :emissions => Dict(
-            biomass_consumption_edge.id => get(transform_data, :emission_rate, 1.0),
-            co2_emission_edge.id => 1.0
+        :co2_emissions => Dict(
+            co2_emission_edge.id => 1.0,
+            biomass_consumption_edge.id => get(transform_data, :process_emission_rate, 0.0)
+                                + get(transform_data, :fuel_emission_rate, 0.0)
         ),
-        :capture => Dict(
-            biomass_consumption_edge.id => get(transform_data, :capture_rate, 1.0),
-            co2_captured_edge.id => 1.0
-        )
+
+        :co2_capture => Dict(
+            co2_captured_edge.id => 1.0,
+            biomass_consumption_edge.id => get(transform_data, :process_capture_rate, 0.0)
+                                + get(transform_data, :fuel_capture_rate, 0.0)
+        ),
     )
 
     return BioEthanol(id, bioethanol_transform, biomass_consumption_edge, ethanol_production_edge, elec_production_edge, elec_consumption_edge, natgas_consumption_edge, co2_content_edge, co2_emission_edge, co2_captured_edge) 
