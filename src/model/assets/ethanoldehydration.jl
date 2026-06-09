@@ -31,8 +31,8 @@ function full_default_data(::Type{EthanolDehydration}, id=missing)
             :natgas_consumption => 0.0,
             :elec_consumption => 0.0,
             :ethylene_production => 0.0,
-            :process_emission_rate => 1.0,
-            :process_capture_rate => 1.0,
+            :process_emission_rate => 0.0,
+            :process_capture_rate => 0.0,
             :fuel_emission_rate => 0.0,
             :fuel_capture_rate => 0.0,
         ),
@@ -93,6 +93,7 @@ end
 
 function make(asset_type::Type{EthanolDehydration}, data::AbstractDict{Symbol,Any}, system::System)
     id = AssetId(data[:id])
+    location = as_symbol_or_missing(get(data, :location, missing))
 
     @setup_data(asset_type, data, id)
 
@@ -111,6 +112,7 @@ function make(asset_type::Type{EthanolDehydration}, data::AbstractDict{Symbol,An
     ethanoldehydration_transform = Transformation(;
         id = Symbol(id, "_", ethanoldehydration_transform_key),
         timedata = system.time_data[Symbol(transform_data[:timedata])],
+        location = location,
         constraints = transform_data[:constraints],
     )
 

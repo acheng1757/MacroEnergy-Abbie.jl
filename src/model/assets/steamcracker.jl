@@ -113,6 +113,7 @@ end
 
 function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, system::System)
     id = AssetId(data[:id])
+    location = as_symbol_or_missing(get(data, :location, missing))
 
     @setup_data(asset_type, data, id)
 
@@ -131,7 +132,8 @@ function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, sy
     steamcracker_transform = Transformation(;
         id = Symbol(id, "_", steamcracker_key),
         timedata = system.time_data[Symbol(transform_data[:timedata])],
-        constraints = get(transform_data, :constraints, [BalanceConstraint()]),
+        location = location,
+        constraints = transform_data[:constraints],
     )
 
     # electricity_consumption_edge
@@ -274,12 +276,13 @@ function make(asset_type::Type{SteamCracker}, data::AbstractDict{Symbol,Any}, sy
     # ethane_edge
     ethane_consumption_edge_key = :ethane_consumption_edge
     @process_data(
-        ethane_consumption_edge_data, 
-        data[:edges][ethane_consumption_edge_key], 
+        ethane_consumption_edge_data,
+        data[:edges][ethane_consumption_edge_key],
         [
             (data[:edges][ethane_consumption_edge_key], key),
             (data[:edges][ethane_consumption_edge_key], Symbol("ethane_consumption_", key)),
             (data, Symbol("ethane_consumption_", key)),
+            (data, key),
         ]
     )
     @start_vertex(

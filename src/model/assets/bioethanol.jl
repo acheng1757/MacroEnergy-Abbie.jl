@@ -32,8 +32,8 @@ function full_default_data(::Type{BioEthanol}, id=missing)
             :elec_consumption => 0.0,
             :elec_production => 0.0,
             :ethanol_production => 0.0,
-            :process_emission_rate => 1.0,
-            :process_capture_rate => 1.0,
+            :process_emission_rate => 0.0,
+            :process_capture_rate => 0.0,
             :fuel_emission_rate => 0.0,
             :fuel_capture_rate => 0.0,
         ),
@@ -95,8 +95,8 @@ function simple_default_data(::Type{BioEthanol}, id=missing)
         :investment_cost => 0.0,
         :fixed_om_cost => 0.0,
         :variable_om_cost => 0.0,
-        :ethanol_commodity => "LiquidFuels",
-        :biomass_commodity => "Biomass",
+        :ethanol_production_commodity => "LiquidFuels",
+        :biomass_consumption_commodity => "Biomass",
         :min_flow_fraction => 0.0,
     )
 end
@@ -165,6 +165,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][ethanol_production_edge_key], key), 
             (data[:edges][ethanol_production_edge_key], Symbol("ethanol_production_", key)),
             (data, Symbol("ethanol_production_", key)), 
+            (data, key),
         ],
     )
     commodity_symbol = Symbol(ethanol_production_edge_data[:commodity])
@@ -194,6 +195,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][elec_consumption_edge_key], key),
             (data[:edges][elec_consumption_edge_key], Symbol("elec_consumption_", key)),
             (data, Symbol("elec_consumption_", key)),
+            (data, key),
         ]
     )
     @start_vertex(
@@ -221,6 +223,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][natgas_consumption_edge_key], key),
             (data[:edges][natgas_consumption_edge_key], Symbol("natgas_consumption_", key)),
             (data, Symbol("natgas_consumption_", key)),
+            (data, key),
         ]
     )
     @start_vertex(
@@ -248,6 +251,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][elec_production_edge_key], key),
             (data[:edges][elec_production_edge_key], Symbol("elec_production_", key)),
             (data, Symbol("elec_production_", key)),
+            (data, key),
         ]
     )
     elec_production_start_node = bioethanol_transform
@@ -275,6 +279,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][co2_content_edge_key], key),
             (data[:edges][co2_content_edge_key], Symbol("co2_content_", key)),
             (data, Symbol("co2_content_", key)),
+            (data, key),
         ]
     )
     @start_vertex(
@@ -302,6 +307,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][co2_emission_edge_key], key),
             (data[:edges][co2_emission_edge_key], Symbol("co2_emission_", key)),
             (data, Symbol("co2_emission_", key)),
+            (data, key),
         ]
     )
     co2_emission_start_node = bioethanol_transform
@@ -329,6 +335,7 @@ function make(asset_type::Type{BioEthanol}, data::AbstractDict{Symbol,Any}, syst
             (data[:edges][co2_captured_edge_key], key),
             (data[:edges][co2_captured_edge_key], Symbol("co2_captured_", key)),
             (data, Symbol("co2_captured_", key)),
+            (data, key),
         ]
     )
     co2_captured_start_node = bioethanol_transform
