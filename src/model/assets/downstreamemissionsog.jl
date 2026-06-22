@@ -1,15 +1,17 @@
-struct DownstreamEmissionsNEW{T1<:Commodity, T2<:Commodity} <: AbstractAsset
+struct DownstreamEmissions{T} <: AbstractAsset
     id::AssetId
     fuelsenduse_transform::Transformation
-    fuel_edge::Edge{<:T1}
-    fuel_demand_edge::Edge{<:T2}
+    fuel_edge::Edge{<:T}
+    fuel_demand_edge::Edge{<:T}
     co2_edge::Edge{<:CO2}
 end
 
-DownstreamEmissionsNEW(id::AssetId, fuelsenduse_transform::Transformation, fuel_edge::Edge{T1}, fuel_demand_edge::Edge{T2}, co2_edge::Edge{<:CO2}) where {T1<:Commodity, T2<:Commodity} =
-    DownstreamEmissionsNEW{T1,T2}(id, fuelsenduse_transform, fuel_edge, fuel_demand_edge, co2_edge)
+const FuelsEndUse = DownstreamEmissions
 
-function default_data(t::Type{DownstreamEmissionsNEW}, id=missing, style="full")
+DownstreamEmissions(id::AssetId, fuelsenduse_transform::Transformation, fuel_edge::Edge{T}, fuel_demand_edge::Edge{T}, co2_edge::Edge{<:CO2}) where T<:Commodity =
+    DownstreamEmissions{T}(id, fuelsenduse_transform, fuel_edge, fuel_demand_edge, co2_edge)
+
+function default_data(t::Type{DownstreamEmissions}, id=missing, style="full")
     if style == "full"
         return full_default_data(t, id)
     else
@@ -17,7 +19,7 @@ function default_data(t::Type{DownstreamEmissionsNEW}, id=missing, style="full")
     end
 end
 
-function full_default_data(::Type{DownstreamEmissionsNEW}, id=missing)
+function full_default_data(::Type{DownstreamEmissions}, id=missing)
     return OrderedDict{Symbol,Any}(
         :id => id,
         :transforms => @transform_data(
@@ -43,7 +45,7 @@ function full_default_data(::Type{DownstreamEmissionsNEW}, id=missing)
     )
 end
 
-function simple_default_data(::Type{DownstreamEmissionsNEW}, id=missing)
+function simple_default_data(::Type{DownstreamEmissions}, id=missing)
     return OrderedDict{Symbol,Any}(
         :id => id,
         :location => missing,
@@ -56,7 +58,7 @@ function simple_default_data(::Type{DownstreamEmissionsNEW}, id=missing)
     )
 end
 
-function set_commodity!(::Type{DownstreamEmissionsNEW}, commodity::Type{<:Commodity}, data::AbstractDict{Symbol,Any})
+function set_commodity!(::Type{DownstreamEmissions}, commodity::Type{<:Commodity}, data::AbstractDict{Symbol,Any})
     edge_keys = [:fuel_edge, :fuel_demand_edge,]
     if haskey(data, :fuel_commodity)
         data[:fuel_commodity] = string(commodity)
@@ -76,7 +78,7 @@ function set_commodity!(::Type{DownstreamEmissionsNEW}, commodity::Type{<:Commod
     return nothing
 end
 
-function make(asset_type::Type{DownstreamEmissionsNEW}, data::AbstractDict{Symbol,Any}, system::System)
+function make(asset_type::Type{DownstreamEmissions}, data::AbstractDict{Symbol,Any}, system::System)
     id = AssetId(data[:id])
     location = as_symbol_or_missing(get(data, :location, missing))
 
@@ -138,20 +140,18 @@ function make(asset_type::Type{DownstreamEmissionsNEW}, data::AbstractDict{Symbo
             (data, Symbol("fuel_demand_", key)),
         ]
     )
-    fuel_demand_commodity_symbol = Symbol(fuel_demand_edge_data[:commodity])
-    fuel_demand_commodity = commodity_types()[fuel_demand_commodity_symbol]
     fuel_demand_start_node = fuelsenduse_transform
     @end_vertex(
         fuel_demand_end_node,
         fuel_demand_edge_data,
-        fuel_demand_commodity,
+        commodity,
         [(fuel_demand_edge_data, :end_vertex), (data, :location)],
     )
     fuel_demand_edge = Edge(
         Symbol(id, "_", fuel_demand_edge_key),
         fuel_demand_edge_data,
-        system.time_data[fuel_demand_commodity_symbol],
-        fuel_demand_commodity,
+        system.time_data[commodity_symbol],
+        commodity,
         fuel_demand_start_node,
         fuel_demand_end_node,
     )
@@ -193,5 +193,5 @@ function make(asset_type::Type{DownstreamEmissionsNEW}, data::AbstractDict{Symbo
         )
     )
 
-    return DownstreamEmissionsNEW(id, fuelsenduse_transform, fuel_edge, fuel_demand_edge, co2_edge) 
+    return DownstreamEmissions(id, fuelsenduse_transform, fuel_edge, fuel_demand_edge, co2_edge) 
 end
