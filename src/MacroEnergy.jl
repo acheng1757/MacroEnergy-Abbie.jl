@@ -232,6 +232,7 @@ include("model/assets/ethanoldehydration.jl")
 include("model/assets/syntheticethylene.jl")
 include("model/assets/steamcracker.jl")
 include("model/assets/ethanolupgrade.jl")
+include("model/assets/gasolineblending.jl")
 
 include("config/configure_settings.jl")
 include("config/case_settings.jl")
@@ -240,6 +241,7 @@ include_all_in_folder("load_inputs")
 include_all_in_folder("write_outputs/")
 
 export 
+    BlendedGasoline,
     EthanolUpgrade,
     BioEthanol,
     EthanolDehydration,
