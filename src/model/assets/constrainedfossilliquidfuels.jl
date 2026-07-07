@@ -23,8 +23,10 @@ function full_default_data(::Type{ConstrainedFossilLiquidFuels}, id=missing)
         :id => id,
         :transforms => @transform_data(
             :timedata => "LiquidFuels",
-            :jetfuel_ratio => 0.0,
-            :diesel_ratio => 0.0,
+            :min_jetfuel_ratio => 0.0,
+            :max_jetfuel_ratio => 0.0,
+            :min_diesel_ratio => 0.0,
+            :max_diesel_ratio => 0.0,
             :gasoline_emission_rate => 0.0,
             :jetfuel_emission_rate => 0.0,
             :diesel_emission_rate => 0.0,
@@ -77,8 +79,10 @@ function simple_default_data(::Type{ConstrainedFossilLiquidFuels}, id=missing)
     return OrderedDict{Symbol,Any}(
         :id => id,
         :location => missing,
-        :jetfuel_ratio => 0.0,
-        :diesel_ratio => 0.0,
+        :min_jetfuel_ratio => 0.0,
+        :max_jetfuel_ratio => 0.0,
+        :min_diesel_ratio => 0.0,
+        :max_diesel_ratio => 0.0,
         :gasoline_emission_rate => 0.0,
         :jetfuel_emission_rate => 0.0,
         :diesel_emission_rate => 0.0,
@@ -295,41 +299,58 @@ function make(asset_type::Type{ConstrainedFossilLiquidFuels}, data::AbstractDict
         co2_end_node,
     )
 
-    jetfuel_ratio = get(transform_data, :jetfuel_ratio, 0.0)
-    diesel_ratio  = get(transform_data, :diesel_ratio,  0.0)
+    min_jetfuel_ratio = get(transform_data, :min_jetfuel_ratio, 0.0)
+    max_jetfuel_ratio = get(transform_data, :max_jetfuel_ratio, 0.0)
+    min_diesel_ratio  = get(transform_data, :min_diesel_ratio,  0.0)
+    max_diesel_ratio  = get(transform_data, :max_diesel_ratio,  0.0)
 
-    refinery_transform.balance_data = Dict(
-        # passthrough: each fossil input equals its respective output
-        :gasoline_balance => Dict(
-            fossil_gasoline_edge.id => 1.0,
-            gasoline_edge.id        => 1.0,
-        ),
-        :jetfuel_balance => Dict(
-            fossil_jetfuel_edge.id => 1.0,
-            jetfuel_edge.id        => 1.0,
-        ),
-        :diesel_balance => Dict(
-            fossil_diesel_edge.id => 1.0,
-            diesel_edge.id        => 1.0,
-        ),
-        # ratio constraints: jetfuel = jetfuel_ratio * gasoline, diesel = diesel_ratio * gasoline
-        # sign trick: both edges are inputs, so each contributes -coeff*flow;
-        # using coeff=-ratio for gasoline gives: -jetfuel + ratio*gasoline = 0
-        :jetfuel_ratio_constraint => Dict(
-            fossil_jetfuel_edge.id  => 1.0,
-            fossil_gasoline_edge.id => -jetfuel_ratio,
-        ),
-        :diesel_ratio_constraint => Dict(
-            fossil_diesel_edge.id   => 1.0,
-            fossil_gasoline_edge.id => -diesel_ratio,
-        ),
-        # upstream emissions per unit of each fossil fuel purchased
-        :emissions => Dict(
-            fossil_gasoline_edge.id => get(transform_data, :gasoline_emission_rate, 0.0),
-            fossil_jetfuel_edge.id  => get(transform_data, :jetfuel_emission_rate,  0.0),
-            fossil_diesel_edge.id   => get(transform_data, :diesel_emission_rate,   0.0),
-            co2_edge.id             => 1.0,
-        ),
+    # passthrough: each fossil input equals its respective output
+    @add_balance(
+        refinery_transform,
+        :gasoline_balance,
+        flow(fossil_gasoline_edge) == flow(gasoline_edge),
+    )
+    @add_balance(
+        refinery_transform,
+        :jetfuel_balance,
+        flow(fossil_jetfuel_edge) == flow(jetfuel_edge),
+    )
+    @add_balance(
+        refinery_transform,
+        :diesel_balance,
+        flow(fossil_diesel_edge) == flow(diesel_edge),
+    )
+
+    # jetfuel/gasoline and diesel/gasoline ratio bounds
+    @add_balance(
+        refinery_transform,
+        :jetfuel_ratio_min,
+        flow(fossil_jetfuel_edge) >= min_jetfuel_ratio * flow(fossil_gasoline_edge),
+    )
+    @add_balance(
+        refinery_transform,
+        :jetfuel_ratio_max,
+        flow(fossil_jetfuel_edge) <= max_jetfuel_ratio * flow(fossil_gasoline_edge),
+    )
+    @add_balance(
+        refinery_transform,
+        :diesel_ratio_min,
+        flow(fossil_diesel_edge) >= min_diesel_ratio * flow(fossil_gasoline_edge),
+    )
+    @add_balance(
+        refinery_transform,
+        :diesel_ratio_max,
+        flow(fossil_diesel_edge) <= max_diesel_ratio * flow(fossil_gasoline_edge),
+    )
+
+    # upstream emissions per unit of each fossil fuel purchased
+    @add_balance(
+        refinery_transform,
+        :emissions,
+        get(transform_data, :gasoline_emission_rate, 0.0) * flow(fossil_gasoline_edge) +
+        get(transform_data, :jetfuel_emission_rate, 0.0) * flow(fossil_jetfuel_edge) +
+        get(transform_data, :diesel_emission_rate, 0.0) * flow(fossil_diesel_edge) ==
+        flow(co2_edge),
     )
 
     return ConstrainedFossilLiquidFuels(

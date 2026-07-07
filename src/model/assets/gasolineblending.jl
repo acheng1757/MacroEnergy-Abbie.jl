@@ -22,23 +22,25 @@ function full_default_data(::Type{BlendedGasoline}, id=missing)
             :constraints => Dict{Symbol,Bool}(
                 :BalanceConstraint => true
             ),
+            :min_ethanol_fraction => 0.0,   # the minimum fraction of ethanol in the blend
             :max_ethanol_fraction => 0.0,   # replaces the two fixed-ratio params
         ),
         :edges => Dict{Symbol,Any}(
             :gasoline_edge => @edge_data(
                 :commodity => "LiquidFuels",
+                :has_capacity => false,
+                :unidirectional => true,
             ),
             :ethanol_edge => @edge_data(
                 :commodity => "LiquidFuels",
+                :has_capacity => false,
+                :unidirectional => true,
             ),
             :gasoline_blend_edge => @edge_data(
                 :commodity => "LiquidFuels",
-                :has_capacity => true,
-                :can_expand => true,
-                :can_retire => true,
-                :constraints => Dict{Symbol,Bool}(
-                    :CapacityConstraint => true
-                ),
+                :has_capacity => false,
+                :unidirectional => true,
+
             ),
         )
     )
@@ -49,6 +51,7 @@ function simple_default_data(::Type{BlendedGasoline}, id=missing)
         :id => id,
         :location => missing,
         :max_ethanol_fraction => 0.0,
+        :min_ethanol_fraction => 0.0,
     )
 end
 
@@ -164,6 +167,7 @@ function make(asset_type::Type{BlendedGasoline}, data::AbstractDict{Symbol,Any},
     )
 
     # --- Balances: mass conservation + flexible max-blend cap, fix #2 ---
+    min_ethanol_fraction = get(transform_data, :min_ethanol_fraction, 0.0) # the 0.0 is just a fallback value
     max_ethanol_fraction = get(transform_data, :max_ethanol_fraction, 0.0) # the 0.0 is just a fallback value
 
     @add_balance(
@@ -176,6 +180,12 @@ function make(asset_type::Type{BlendedGasoline}, data::AbstractDict{Symbol,Any},
         gasoline_blend_transform,
         :max_ethanol_blend,
         flow(ethanol_edge) <= max_ethanol_fraction * flow(gasoline_blend_edge),
+    )
+
+    @add_balance(
+        gasoline_blend_transform,
+        :min_ethanol_fraction,
+        flow(ethanol_edge) >= min_ethanol_fraction * flow(gasoline_blend_edge),
     )
 
     return BlendedGasoline(id, gasoline_blend_transform, gasoline_edge, ethanol_edge, gasoline_blend_edge)
