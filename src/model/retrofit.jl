@@ -4,13 +4,24 @@ function make_retrofit_options(system::System, data::Dict{Symbol,Any})
         retrofit_id_list = []
 
         for retrofit_option_data in data[:instance_data][:retrofit_options]
+            println("DEBUG: retrofit_option_data = ", retrofit_option_data)
+            println("DEBUG: retrofit_option_data keys = ", keys(retrofit_option_data))
+
             retrofit_id = Symbol(retrofit_option_data[:id]) # Set the retrofit_id to be the id of the retrofit option, make sure is Symbol
             push!(retrofit_id_list, retrofit_id)
 
             # Copy template asset and merge data from retrofitting option
             template_asset = Symbol(retrofit_option_data[:template_id])
+            println("DEBUG: template_asset (template_id) = ", template_asset)
+
             template_asset_data = get_input_data_by_id(system, template_asset)
+            println("DEBUG: template_asset_data = ", template_asset_data)
+            println("DEBUG: template_asset_data keys = ", template_asset_data === nothing ? "N/A (nothing returned)" : keys(template_asset_data))
+            println("DEBUG: template_asset_data has :type? ", template_asset_data !== nothing && haskey(template_asset_data, :type))
+
             retrofit_data = recursive_merge(template_asset_data, retrofit_option_data)
+            println("DEBUG: retrofit_data keys after merge = ", keys(retrofit_data))
+            println("DEBUG: retrofit_data has :type? ", haskey(retrofit_data, :type))
 
             # Make changes to the retrofitting edge
             for (edge, attributes) in retrofit_data[:edges]
@@ -22,8 +33,9 @@ function make_retrofit_options(system::System, data::Dict{Symbol,Any})
                     attributes[:can_expand] = true # Make sure retroftting edge can expand
                 end
             end
-            
+
             # Add the retrofitting asset to the system
+            println("DEBUG: about to call make() with type = ", get(retrofit_data, :type, "!!! MISSING :type KEY !!!"))
             add!(system, make(retrofit_data[:type], retrofit_data, system))
 
         end

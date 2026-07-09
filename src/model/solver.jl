@@ -14,6 +14,7 @@ function solve_case(case::Case, opt::O, ::PerfectForesight) where O <: Union{Opt
     model = generate_model(case, opt, alg)
 
     optimize!(model)
+    check_termination_status(model)
 
     return (case, model)
 end
@@ -64,6 +65,7 @@ function solve_case(case::Case, opt::O, ::Myopic) where O <: Union{Optimizer, Di
         model = generate_model(system, opt, settings, alg)
 
         optimize!(model)
+        check_termination_status(model)
 
         period_idx < length(periods) && carry_over_capacities!(periods[period_idx+1], system, perfect_foresight=false)
 
@@ -136,6 +138,119 @@ function ensure_duals_available!(model::Model)
     end
     
     @info "Linearization successful, dual values now available."
-    
+
     return nothing
+end
+
+"""
+    check_termination_status(model::Model)
+
+Log the model's solve status. If the solve did not produce a usable solution
+(infeasible, unbounded, or a numerical failure that prevented a solution being
+found), attempt to diagnose the cause by computing an IIS via [`find_iis`](@ref),
+then throw an error rather than letting the caller proceed to post-processing
+with no solution available.
+"""
+function check_termination_status(model::Model)
+    status = termination_status(model)
+
+    if status == MOI.OPTIMAL || status == MOI.LOCALLY_SOLVED
+        return status
+    end
+
+    @error "Model did not solve to optimality. Termination status: $status"
+
+    if status in (
+        MOI.INFEASIBLE,
+        MOI.INFEASIBLE_OR_UNBOUNDED,
+        MOI.DUAL_INFEASIBLE,
+        MOI.NUMERICAL_ERROR,
+        MOI.OTHER_ERROR,
+    )
+        find_iis(model)
+        status = termination_status(model)
+    end
+
+    if status == MOI.OPTIMAL || status == MOI.LOCALLY_SOLVED
+        @info "Model solved successfully after retry (termination status: $status)."
+        return status
+    end
+
+    if !has_values(model)
+        error("Solve did not produce a usable solution (termination status: $status). Aborting before post-processing.")
+    end
+
+    @warn "Proceeding with a non-optimal solution (termination status: $status)."
+    return status
+end
+
+"""
+    find_iis(model::Model)
+
+Diagnose an infeasible model by computing an Irreducible Infeasible Subsystem (IIS)
+via the solver's conflict refiner. Only supported for Gurobi-backed models: JuMP's
+conflict computation (`compute_conflict!`) is not supported by HiGHS.
+
+If the termination status is not a certified `INFEASIBLE` (e.g. `NUMERICAL_ERROR`),
+first retries the solve with Gurobi's homogeneous barrier algorithm (`BarHomogeneous
+= 1`), which is more robust to the numerical trouble that produces false
+"infeasible-or-unbounded" results. If that retry solves the model, the original
+failure was numerical rather than a true infeasibility, and no IIS is computed.
+
+Prints the constraints found to be in conflict and returns them, or `nothing` if no
+IIS could be computed.
+"""
+function find_iis(model::Model)
+    if !occursin("Gurobi", solver_name(model))
+        @warn "IIS computation is only supported for Gurobi-backed models (current solver: $(solver_name(model))). Re-run with Gurobi.Optimizer to diagnose infeasibility."
+        return nothing
+    end
+
+    status = termination_status(model)
+    if status != MOI.INFEASIBLE
+        @info "Termination status is $status, not a certified INFEASIBLE. Retrying with Gurobi's homogeneous barrier algorithm (BarHomogeneous=1) to rule out numerical trouble before computing an IIS..."
+        try
+            set_optimizer_attribute(model, "BarHomogeneous", 1)
+            optimize!(model)
+        catch e
+            @warn "Failed to re-solve with BarHomogeneous=1: $e"
+        end
+
+        status = termination_status(model)
+        @info "Termination status after BarHomogeneous retry: $status"
+
+        if status == MOI.OPTIMAL || status == MOI.LOCALLY_SOLVED
+            @info "Model solved successfully with BarHomogeneous=1. The original failure was numerical, not a true infeasibility. Consider adding \"BarHomogeneous\" => 1 to your optimizer_attributes."
+            return nothing
+        end
+    end
+
+    @info "Computing IIS to diagnose infeasibility..."
+    try
+        compute_conflict!(model)
+    catch e
+        @warn "Gurobi failed to compute an IIS for this model (it may not have been able to certify infeasibility): $e"
+        return nothing
+    end
+
+    if get_attribute(model, MOI.ConflictStatus()) != MOI.CONFLICT_FOUND
+        @warn "Gurobi could not find a conflict (IIS) for this model."
+        return nothing
+    end
+
+    conflict_constraints = ConstraintRef[]
+    for (F, S) in list_of_constraint_types(model)
+        for con in all_constraints(model, F, S)
+            if MOI.get(model, MOI.ConstraintConflictStatus(), con) == MOI.IN_CONFLICT
+                push!(conflict_constraints, con)
+            end
+        end
+    end
+
+    @info "IIS found: $(length(conflict_constraints)) constraint(s) in conflict:"
+    for con in conflict_constraints
+        println(con)
+    end
+
+    return conflict_constraints
 end
